@@ -1,3 +1,3 @@
-from .alura import Alura
+from pyalura.course import Course
 
-__all__ = ["Alura"]
+__all__ = ["Course"]

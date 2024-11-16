@@ -2,6 +2,8 @@ import json
 import enum
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
+from datetime import datetime, timedelta
+import time
 
 import html2text
 from lxml.html import HtmlElement
@@ -180,3 +182,17 @@ def get_item_content(root):
     content = html.tostring(element)
     string = html2text.html2text(content.decode("UTF-8"))
     return f"# {header}\n\n{string}"
+
+
+def sleep_program(sleep_seconds: int):
+    if sleep_seconds <= 0:
+        return
+
+    while sleep_seconds > 0:
+        print(f"Esperando: {timedelta(seconds=sleep_seconds)}", end="\r")
+        sleep_seconds -= 1
+        time.sleep(1)
+
+    last_msg = f"Esperando: {timedelta(seconds=0)}"
+    print(last_msg, end="\r")
+    print(" " * len(last_msg), end="\r")
