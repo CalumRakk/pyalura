@@ -91,4 +91,4 @@ class Alura(Base):
                 if not isinstance(item_response, CachedResponse):
                     diff_time = datetime.now() - last_request_time
                     if diff_time.total_seconds() < random.randint(5, 10):
-                        self.sleep_program(random.randint(5, 10))
+                        self.sleep_program(random.randint(5, 30))
