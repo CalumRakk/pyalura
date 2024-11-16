@@ -4,4 +4,4 @@ url = "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring
 alura = Alura(url)
 
 for course in alura.iter_course():
-    print(course)
+    print()

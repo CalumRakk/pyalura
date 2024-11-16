@@ -53,9 +53,9 @@ def add_slash(url):
     return url
 
 
-def remove_paths(url):
+def extract_base_url(url):
     """
-    Obtiene la URL principal del curso de una url quitando todas las subrutas de la url.
+    Obtiene la 'URL base del curso' de una url quitando todas las subrutas de la url.
     """
     urlparsed = urlparse(url)
     url_parts = Path(urlparsed.path).parts
@@ -65,18 +65,6 @@ def remove_paths(url):
         url_join = url_join.replace("\\/", "/")
         return urljoin(HOST, url_join)
     return url
-
-
-def get_redirection(url):
-    # Devuelve la primera URL del curso que muestra contenido, por lo general la pagina de presentación.
-    url = add_slash(url) + "continue/"
-
-    response = requests.head(
-        url,
-        cookies=cookies,
-        headers=headers,
-    )
-    return response.headers["location"]
 
 
 class ArticleType(enum.Enum):
@@ -89,7 +77,7 @@ class ArticleType(enum.Enum):
     MULTIPLE_CHOICE = 7
 
 
-def get_course_content(root: "HtmlElement"):
+def get_course_sections(root: "HtmlElement"):
     """
     Extrae el contenido del curso desde un elemento `<select>` del HTML y devuelve una lista de secciones con sus nombres y URLs.
 
@@ -173,7 +161,7 @@ def get_items(root: "HtmlElement") -> list[dict]:
     return articulos
 
 
-def get_item_video(item_url: str):
+def fetch_item_video(item_url: str):
 
     url_api = f"{urljoin('https://app.aluracursos.com/', item_url)}/video"
     response = requests.get(
