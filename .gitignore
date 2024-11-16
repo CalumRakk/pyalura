@@ -1,0 +1,7 @@
+*.json
+*.sqlite
+*.bin
+*.egg-info
+
+scripts
+__pycache__
