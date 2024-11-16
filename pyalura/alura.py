@@ -2,8 +2,9 @@ import requests
 import pyalura.utils as utils
 from lxml import html
 import random
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+from requests_cache import CachedResponse
 
 
 class Base:
@@ -29,6 +30,19 @@ class Alura(Base):
         self.url_origin = url
         self.base_course_url = utils.extract_base_url(self.url_origin)
         self.continue_course_url = utils.add_slash(self.base_course_url) + "continue/"
+
+    def sleep_program(self, sleep_seconds: int):
+        if sleep_seconds <= 0:
+            return
+
+        while sleep_seconds > 0:
+            print(f"Esperando: {timedelta(seconds=sleep_seconds)}", end="\r")
+            sleep_seconds -= 1
+            time.sleep(1)
+
+        last_msg = f"Esperando: {timedelta(seconds=0)}"
+        print(last_msg, end="\r")
+        print(" " * len(last_msg), end="\r")
 
     @property
     def course_sections(self):
@@ -74,6 +88,7 @@ class Alura(Base):
                 )
                 yield item
 
-                diff_time = datetime.now() - last_request_time
-                if diff_time.total_seconds() < random.randint(5, 10):
-                    time.sleep(random.randint(5, 10))
+                if not isinstance(item_response, CachedResponse):
+                    diff_time = datetime.now() - last_request_time
+                    if diff_time.total_seconds() < random.randint(5, 10):
+                        self.sleep_program(random.randint(5, 10))

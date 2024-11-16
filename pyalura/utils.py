@@ -75,6 +75,7 @@ class ArticleType(enum.Enum):
     DO_AFTER_ME = 5
     WHAT_WE_LEARNED = 6
     MULTIPLE_CHOICE = 7
+    HQ_EXPLANATION = 8
 
 
 def get_course_sections(root: "HtmlElement"):
