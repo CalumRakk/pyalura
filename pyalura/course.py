@@ -21,6 +21,7 @@ class Course(Base):
         self.name = utils.extract_name_url(self.url_origin)
 
         logger.debug(f"Course: {self.url_origin}")
+        super().__init__()
 
     @property
     def sections(self) -> list["Section"]:

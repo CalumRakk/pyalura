@@ -13,6 +13,7 @@ class Section(Base):
         self.name = name
         self.url = url
         self.course = course
+        super().__init__()
 
     @property
     def items(self) -> list[Item]:

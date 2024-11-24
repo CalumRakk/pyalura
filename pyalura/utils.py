@@ -1,17 +1,12 @@
-import json
 import enum
 from pathlib import Path
-from urllib.parse import urljoin, urlparse, parse_qs
-from datetime import datetime, timedelta
+from urllib.parse import urljoin, urlparse
+from datetime import timedelta
 import time
-
-from requests_cache import CachedResponse
-import html2text
-from lxml.html import HtmlElement
-from lxml import html
-import requests
-import requests_cache
 import logging
+
+from lxml.html import HtmlElement
+import requests_cache
 
 logging.basicConfig(
     filename="log.txt",
@@ -38,24 +33,6 @@ requests_cache.install_cache(
 )
 
 HOST = "https://app.aluracursos.com"
-cookies = json.loads(Path("cookies.json").read_text())
-headers = {
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "accept-language": "es,es-ES;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,es-CO;q=0.5",
-    # "cache-control": "no-cache",
-    # "pragma": "no-cache",
-    "priority": "u=0, i",
-    # "referer": "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/87020",
-    "sec-ch-ua": '"Not/A)Brand";v="8", "Chromium";v="126", "Microsoft Edge";v="126"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"Linux"',
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "same-origin",
-    "sec-fetch-user": "?1",
-    "upgrade-insecure-requests": "1",
-    "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36 Edg/126.0.0.0",
-}
 
 
 def is_url_curse(url):
@@ -185,42 +162,6 @@ def get_items(root: "HtmlElement") -> list[dict]:
         articulos.append({"url": url, "title": title, "index": index, "type": type})
 
     return articulos
-
-
-def fetch_item_video(item_url: str):
-
-    url_api = f"{urljoin('https://app.aluracursos.com/', item_url)}/video"
-    response = requests.get(
-        url_api,
-        cookies=cookies,
-        headers=headers,
-    )
-
-    videos = response.json()
-    videos = {i["quality"]: i for i in videos}
-
-    if not isinstance(response, CachedResponse):
-        return videos
-
-    download_drr = videos["hd"]["mp4"]
-    url_parsed = urlparse(download_drr)
-    query_params = {key: value[0] for key, value in parse_qs(url_parsed.query).items()}
-    expires = int(query_params["X-Amz-Expires"])
-    request_time = datetime.strptime(query_params["X-Amz-Date"], "%Y%m%dT%H%M%SZ")
-    if datetime.utcnow() - request_time >= timedelta(seconds=expires):
-        cache = requests_cache.get_cache()
-        cache.delete(response.cache_key)
-        return fetch_item_video(item_url)
-
-    return videos
-
-
-def get_item_content(root):
-    element = root.find(".//section[@id='task-content']")
-    header = root.find(".//span[@class='task-body-header-title-text']").text.strip()
-    content = html.tostring(element)
-    string = html2text.html2text(content.decode("UTF-8"))
-    return f"# {header}\n\n{string}"
 
 
 def sleep_program(sleep_seconds: int):
