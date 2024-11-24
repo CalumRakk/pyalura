@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="aluracourse",
-    version="0.1",
+    name="pyalura",
+    version="0.2",
     description="",
     author="Leo",
     author_email="leocasti@gmail.com",

@@ -1,9 +1,11 @@
 from pyalura import Course
 
-url = "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/87011"
+url = "https://app.aluracursos.com/course/java-api-conectandola-front-end"
 course = Course(url)
 
-for section in course.sections:
+for content in course.iter_course():
+    # BUG: arreglas nombre de error.
+    section = content["section"]
     print(f"Seccion: {section.name}")
 
     for item in section.items:

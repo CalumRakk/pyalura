@@ -10,7 +10,24 @@ from lxml.html import HtmlElement
 from lxml import html
 import requests
 import requests_cache
+import logging
 
+logging.basicConfig(
+    filename="log.txt",
+    filemode="a",
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%d-%m-%Y %I:%M:%S %p",
+    level=logging.DEBUG,
+    encoding="utf-8",
+)
+
+logger = logging.getLogger(__name__)
+logger.info(
+    """
+    =====================
+     Incio del programa
+    ====================="""
+)
 
 requests_cache.install_cache(
     "http_cache",
@@ -64,9 +81,14 @@ def extract_base_url(url):
 
     if len(url_parts) > 3:
         url_join = "/".join(url_parts[:3])
-        url_join = url_join.replace("\\/", "/")
+        url_join = url_join.replace(r"//", "")
         return urljoin(HOST, url_join)
     return url
+
+
+def extract_name_url(url):
+    base_url = extract_base_url(url)
+    return Path(urlparse(base_url).path).name
 
 
 class ArticleType(enum.Enum):
@@ -102,7 +124,7 @@ def get_course_sections(root: "HtmlElement"):
             }
         ]
     """
-
+    logger.debug("Obteniendo secciones del curso...")
     select_element = root.find(".//select[@class='task-menu-sections-select']")
     url_raw = select_element.get("onchange").split("=")[1].strip(";'")
     content = []
@@ -112,7 +134,7 @@ def get_course_sections(root: "HtmlElement"):
         url_relative = url_raw.replace("'+this.value+'", value)
         url = urljoin(HOST, url_relative)
         content.append({"name": name, "url": url})
-
+    logger.debug(f"Secciones obtenidas: {len(content)}, primer element: {content[0]}")
     return content
 
 
