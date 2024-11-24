@@ -1,13 +1,9 @@
-from typing import Iterator
-import random
-from datetime import datetime, timedelta
-import time
+from typing import Iterator, Union
+from datetime import datetime
 from urllib.parse import urljoin
 
-
-from lxml import html
-
 from pyalura.section import Section
+from pyalura.item import Item
 from pyalura.base import Base
 from pyalura import utils
 from pyalura.utils import HOST
@@ -55,32 +51,25 @@ class Course(Base):
             setattr(self, "_course_sections", course_sections)
         return getattr(self, "_course_sections")
 
-    def iter_course(self) -> Iterator[dict]:
+    @property
+    def last_item_get_content_time(self) -> Union[datetime, None]:
+        """Devuelve la fecha y hora de la ultima llamada a get_content()."""
+        if hasattr(self, "_last_item_get_content_time") is False:
+            return None
+        return getattr(self, "_last_item_get_content_time")
+
+    @last_item_get_content_time.setter
+    def last_item_get_content_time(self, value):
+        if not isinstance(value, datetime):
+            raise TypeError
+
+        setattr(self, "_last_item_get_content_time", value)
+        return getattr(self, "_last_item_get_content_time")
+
+    def iter_items(self) -> Iterator[Item]:
         """
-        Itera sobre cada episodio/tarea del curso en una forma pausable y devuelve su información.
-
-        Yields:
-            dict: Un diccionario con información sobre el artículo, que incluye:
-                - "url": URL del artículo.
-                - "index": Índice del artículo en la sección.
-                - "title": Título del artículo.
-                - "type": Tipo de artículo (ej. VIDEO).
-                - "video": Datos del video (si es un video).
-                - "content": Contenido del artículo.
-                - "raw_html": HTML sin procesar del artículo.
-                - "section": Información de la sección del curso a la que pertenece.
-
+        Itera sobre cada episodio/tarea del curso.
         """
-
         for section in self.sections:
-            print(f"Seccion: {section.name}")
             for item in section.items:
-                print("\t", f"{item.index} {item.title} - {item.type}")
-                last_request_time = datetime.now()
-                content = item.get_content()
-                yield content
-
-                if not content["is_cache"]:
-                    diff_time = datetime.now() - last_request_time
-                    if diff_time.total_seconds() < random.randint(5, 10):
-                        utils.sleep_program(random.randint(5, 30))
+                yield item
