@@ -27,7 +27,7 @@ class Item(Base):
         Devuelve el contenido del episodio/tarea del curso.
 
         dict: Un diccionario con información sobre el contenido del episodio/tarea, que incluye:
-            - "video": Datos del video (si es un video).
+            - "videos": Datos del video (si es un video).
             - "content": Contenido del artículo.
             - "raw_html": HTML sin procesar del artículo.
 
@@ -50,13 +50,12 @@ class Item(Base):
                     utils.sleep_program(randint)
                     self.section.course.last_item_get_content_time = datetime.now()
 
-        item_video = None
-        item_content = None
+        item_content = utils.get_item_content(root)
         item_raw_html = response.text
+        videos = None
+
         if self.type == utils.ArticleType.VIDEO:
-            item_video = utils.fetch_item_video(self.url)
-            item_content = utils.get_item_content(root)
-        else:
+            videos = utils.fetch_item_video(self.url)
             item_content = utils.get_item_content(root)
 
-        return {"video": item_video, "content": item_content, "raw_html": item_raw_html}
+        return {"videos": videos, "content": item_content, "raw_html": item_raw_html}

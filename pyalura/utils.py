@@ -1,10 +1,11 @@
 import json
 import enum
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qs
 from datetime import datetime, timedelta
 import time
 
+from requests_cache import CachedResponse
 import html2text
 from lxml.html import HtmlElement
 from lxml import html
@@ -80,10 +81,9 @@ def extract_base_url(url):
     url_parts = Path(urlparsed.path).parts
 
     if len(url_parts) > 3:
-        url_join = "/".join(url_parts[:3])
-        url_join = url_join.replace(r"//", "")
+        url_join = "/".join(url_parts[1:3])
         return urljoin(HOST, url_join)
-    return url
+    raise ValueError("La URL no es valida")
 
 
 def extract_name_url(url):
@@ -195,7 +195,24 @@ def fetch_item_video(item_url: str):
         cookies=cookies,
         headers=headers,
     )
-    return response.json()
+
+    videos = response.json()
+    videos = {i["quality"]: i for i in videos}
+
+    if not isinstance(response, CachedResponse):
+        return videos
+
+    download_drr = videos["hd"]["mp4"]
+    url_parsed = urlparse(download_drr)
+    query_params = {key: value[0] for key, value in parse_qs(url_parsed.query).items()}
+    expires = int(query_params["X-Amz-Expires"])
+    request_time = datetime.strptime(query_params["X-Amz-Date"], "%Y%m%dT%H%M%SZ")
+    if datetime.utcnow() - request_time >= timedelta(seconds=expires):
+        cache = requests_cache.get_cache()
+        cache.delete(response.cache_key)
+        return fetch_item_video(item_url)
+
+    return videos
 
 
 def get_item_content(root):

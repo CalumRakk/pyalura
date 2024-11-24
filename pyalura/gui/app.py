@@ -3,22 +3,14 @@ import streamlit as st
 from pyalura.gui.textarea import TextArea
 from pyalura.gui.utils import display_path_tree
 
+FOLDER_DOWNLOAD = Path("descargas")
+FOLDER_DOWNLOAD.mkdir(exist_ok=True)
+
 
 def main():
     st.set_page_config(
         page_title="Explorador de Archivos", page_icon="📂", layout="wide"
     )
-
-    # st.markdown(
-    #     """
-    # <style>
-    # [data-testid="stHeader"] button {
-    #     visibility: hidden;
-    # }
-    # </style>
-    # """,
-    #     unsafe_allow_html=True,
-    # )
 
     if "TextArea" not in st.session_state:
         st.session_state.TextArea = TextArea()
@@ -61,7 +53,7 @@ def main():
     with st.container():
         folder_output = st.sidebar.text_input(
             "Carpeta de descarga:",
-            "Downloads",
+            FOLDER_DOWNLOAD.name,
             key="folder_output",
             disabled=not st.session_state.btn_task,
         )

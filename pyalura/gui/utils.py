@@ -1,6 +1,9 @@
 import streamlit as st
 from pyalura import Course
-import time
+from pathlib import Path
+from pyalura.utils import ArticleType
+from pydm import PyDM
+import requests_cache
 
 
 def get_file_icon(file_type):
@@ -32,12 +35,6 @@ def get_file_icon(file_type):
     )  # Icono por defecto si no se encuentra el tipo
 
 
-def fetch_sections(url):
-    time.sleep(5)
-    course = Course(url)
-    return course.sections
-
-
 def display_path_tree(level=0):
     st.markdown("# 📂 Descargar cursos de Alura")
     url = st.text_input(
@@ -66,18 +63,40 @@ def display_path_tree(level=0):
     st.markdown("---")
 
     if "task" in st.session_state:
-        with st.spinner("Obtiendo informacion del curso... Por favor espera."):
-            sections = fetch_sections(url)
+        with st.status("Descargando curso...", expanded=True, state="running"):
+            curso = Course(url)
+            curse_path = Path(st.session_state.folder_output) / curso.name
+            curse_path.mkdir(parents=True, exist_ok=True)
 
-        with st.status("Downloading data...", expanded=True, state="running"):
-            for section in sections:
+            for section in curso.sections:
                 indent = "&nbsp;" * (4 * level)
                 st.write(
                     f"{indent}{get_file_icon('folder')} **{section.name}/**",
                     unsafe_allow_html=True,
                 )
+                section_path = curse_path / section.name
+                section_path.mkdir(parents=True, exist_ok=True)
 
                 for item in section.items:
+                    item_path = section_path / item.title
+                    content = item.get_content()
+
                     icon = get_file_icon("doc")
+                    if item.type == ArticleType.VIDEO:
+                        icon = get_file_icon("mp4")
+                        target_path = item_path.with_suffix(".mp4")
+                        if not target_path.exists():
+                            download_drr = content["videos"]["hd"]["mp4"]
+                            with requests_cache.disabled():
+                                pydm = PyDM(
+                                    download_drr, output=target_path, folder_temp="temp"
+                                )
+                                pydm.download()
+
+                    else:
+                        target_path = item_path.with_suffix(".md")
+                        if not target_path.exists():
+                            target_path.write_text(content["content"])
+
                     indent = "&nbsp;" * (4 * 1)
                     st.write(f"{indent}{icon} {item.title}", unsafe_allow_html=True)
