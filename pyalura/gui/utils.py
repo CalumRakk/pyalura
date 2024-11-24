@@ -78,7 +78,7 @@ def display_path_tree(level=0):
                 section_path.mkdir(parents=True, exist_ok=True)
 
                 for item in section.items:
-                    item_path = section_path / item.title
+                    item_path = section_path / f"{item.index} {item.title}"
                     content = item.get_content()
 
                     icon = get_file_icon("doc")
@@ -93,10 +93,9 @@ def display_path_tree(level=0):
                                 )
                                 pydm.download()
 
-                    else:
-                        target_path = item_path.with_suffix(".md")
-                        if not target_path.exists():
-                            target_path.write_text(content["content"])
+                    target_path = item_path.with_suffix(".md")
+                    if not target_path.exists():
+                        target_path.write_text(content["content"])
 
                     indent = "&nbsp;" * (4 * 1)
                     st.write(f"{indent}{icon} {item.title}", unsafe_allow_html=True)

@@ -50,21 +50,18 @@ class CookieManager:
                     "value": value,
                 }
         elif format_type == "json":
-            data = json.loads(content)
-            for cookie in data:
-                cookies[cookie["name"]] = {
-                    "domain": cookie["domain"],
-                    "flag": cookie["httpOnly"],
-                    "path": cookie["path"],
-                    "secure": cookie["secure"],
-                    "expiration": cookie["expires"],
-                    "value": cookie["value"],
-                }
-        return {
-            "SESSION": cookies["SESSION"]["value"],
-            "caelum.login.token": cookies["caelum.login.token"]["value"],
-            "alura.userId": cookies["alura.userId"]["value"],
-        }
+            cookies = json.loads(content)
+
+        try:
+            return {
+                "SESSION": cookies.get("SESSION") or cookies["SESSION"]["value"],
+                "caelum.login.token": cookies.get("caelum.login.token")
+                or cookies["caelum.login.token"]["value"],
+                "alura.userId": cookies.get("alura.userId")
+                or cookies["alura.userId"]["value"],
+            }
+        except KeyError:
+            return {}
 
     def get_cookies(self):
         content = self.load()
