@@ -7,5 +7,5 @@ setup(
     author="Leo",
     author_email="leocasti@gmail.com",
     packages=find_packages(),
-    install_requires=["lxml", "requests", "html2text", "requests_cache"],
+    install_requires=["lxml", "requests", "html2text", "requests_cache", "Unidecode"],
 )

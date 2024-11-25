@@ -65,23 +65,27 @@ def display_path_tree(level=0):
     if "task" in st.session_state:
         with st.status("Descargando curso...", expanded=True, state="running"):
             curso = Course(url)
-            curse_path = Path(st.session_state.folder_output) / curso.name
+            curse_path = Path(st.session_state.folder_output) / curso.title_slug
             curse_path.mkdir(parents=True, exist_ok=True)
 
             for section in curso.sections:
                 indent = "&nbsp;" * (4 * level)
                 st.write(
-                    f"{indent}{get_file_icon('folder')} **{section.name}/**",
+                    f"{indent}{get_file_icon('folder')} **{section.index}-{section.title_slug}/**",
                     unsafe_allow_html=True,
                 )
-                section_path = curse_path / section.name
+                section_path = curse_path / f"{section.index}-{section.title_slug}"
                 section_path.mkdir(parents=True, exist_ok=True)
 
                 for item in section.items:
-                    item_path = section_path / f"{item.index} {item.title}"
+                    item_path = section_path / f"{item.index}-{item.title_slug}"
                     content = item.get_content()
-
                     icon = get_file_icon("doc")
+
+                    target_path = item_path.with_suffix(".md")
+                    if not target_path.exists():
+                        target_path.write_text(content["content"])
+
                     if item.type == ArticleType.VIDEO:
                         icon = get_file_icon("mp4")
                         target_path = item_path.with_suffix(".mp4")
@@ -93,9 +97,8 @@ def display_path_tree(level=0):
                                 )
                                 pydm.download()
 
-                    target_path = item_path.with_suffix(".md")
-                    if not target_path.exists():
-                        target_path.write_text(content["content"])
-
                     indent = "&nbsp;" * (4 * 1)
-                    st.write(f"{indent}{icon} {item.title}", unsafe_allow_html=True)
+                    st.write(
+                        f"{indent}{icon} {target_path.name}",
+                        unsafe_allow_html=True,
+                    )

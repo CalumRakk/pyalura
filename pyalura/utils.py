@@ -7,6 +7,15 @@ import logging
 
 from lxml.html import HtmlElement
 import requests_cache
+import re
+
+
+def sanitize_filename(filename):
+    pattern = r'[<>:"/\\|?*\x00-\x1F]'
+    sanitized = re.sub(pattern, "", filename)
+    sanitized = sanitized.rstrip(" .")
+    return sanitized
+
 
 logging.basicConfig(
     filename="log.txt",

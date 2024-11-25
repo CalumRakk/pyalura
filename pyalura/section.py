@@ -10,7 +10,9 @@ if TYPE_CHECKING:
 
 class Section(Base):
     def __init__(self, name, url, course: "Course"):
-        self.name = name
+        index, title = name.split(".", 1)
+        self.index = index
+        self.title = title.strip()
         self.url = url
         self.course = course
         super().__init__()

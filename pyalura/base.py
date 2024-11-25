@@ -1,8 +1,9 @@
 import requests
-from pyalura import utils
+from pyalura.utils import sanitize_filename
 from lxml import html
 import logging
 from pyalura.cookie_manager import CookieManager
+import unidecode
 
 logger = logging.getLogger(__name__)
 
@@ -43,3 +44,9 @@ class Base:
     def _fetch_root(self, url):
         response = self._make_request(url)
         return html.fromstring(response.text)
+
+    @property
+    def title_slug(self):
+        slug = unidecode.unidecode(self.title.strip())
+        slug_lower = slug.lower().replace(" ", "-")
+        return sanitize_filename(slug_lower)

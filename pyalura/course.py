@@ -18,7 +18,7 @@ class Course(Base):
         self.url_origin = url
         self.base_course_url = utils.extract_base_url(self.url_origin)
         self.continue_course_url = utils.add_slash(self.base_course_url) + "continue/"
-        self.name = utils.extract_name_url(self.url_origin)
+        self.title = utils.extract_name_url(self.url_origin)
 
         logger.debug(f"Course: {self.url_origin}")
         super().__init__()
@@ -34,7 +34,7 @@ class Course(Base):
             if not "continue" in url_course:
                 logger.info("El curso no ha sido iniciado")
                 logger.debug("Try to enroll (Iniciando Curso...)")
-                path_tryToEnroll = f"/courses/{self.name}/tryToEnroll"
+                path_tryToEnroll = f"/courses/{self.title}/tryToEnroll"
                 url_tryToEnroll = urljoin(HOST, path_tryToEnroll)
                 r2 = self._make_request(url_tryToEnroll, method="HEAD")
                 url_course = r2.headers["location"]
