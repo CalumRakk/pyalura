@@ -29,11 +29,17 @@ class Item(Base):
         """
         Devuelve el contenido del episodio/tarea del curso.
         """
+        if self._should_wait_for_request():
+            self._wait_for_request()
+
         response = self._make_request(self.url)
         root = html.fromstring(response.text)
+        is_cache = isinstance(response, CachedResponse)
 
-        if not isinstance(response, CachedResponse):
-            self._should_wait_for_request()
+        if is_cache:
+            self.section.course.last_item_get_content_time = None
+        else:
+            self.section.course.last_item_get_content_time = datetime.now()
 
         item_content = self._get_content(root)
         item_raw_html = response.text
@@ -42,23 +48,32 @@ class Item(Base):
         if self.type == utils.ArticleType.VIDEO:
             videos = self._fetch_item_video()
 
-        return {"videos": videos, "content": item_content, "raw_html": item_raw_html}
+        return {
+            "videos": videos,
+            "content": item_content,
+            "raw_html": item_raw_html,
+            "is_cache": is_cache,
+        }
 
     def _should_wait_for_request(self) -> bool:
         """
-        Determina si es necesario esperar antes de hacer la siguiente solicitud.
+        Devuelve True si es necesario esperar antes de hacer la siguiente solicitud.
         """
         if self.section.course.last_item_get_content_time is None:
-            self.section.course.last_item_get_content_time = datetime.now()
             return False
 
         diff_time = datetime.now() - self.section.course.last_item_get_content_time
         if diff_time.total_seconds() < 15:
-            randint = random.randint(5, 30)
-            utils.sleep_program(randint)
-            self.section.course.last_item_get_content_time = datetime.now()
             return True
         return False
+
+    def _wait_for_request(self):
+        """
+        Pausa el programa si es necesario esperar antes de hacer la siguiente solicitud.
+        """
+        randint = random.randint(5, 30)
+        utils.sleep_program(randint)
+        self.section.course.last_item_get_content_time = datetime.now()
 
     def _is_video_expired(self, video_url: str) -> bool:
         """

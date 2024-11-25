@@ -69,7 +69,7 @@ def extract_base_url(url):
     if len(url_parts) > 3:
         url_join = "/".join(url_parts[1:3])
         return urljoin(HOST, url_join)
-    raise ValueError("La URL no es valida")
+    return url
 
 
 def extract_name_url(url):

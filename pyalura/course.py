@@ -61,7 +61,7 @@ class Course(Base):
 
     @last_item_get_content_time.setter
     def last_item_get_content_time(self, value):
-        if not isinstance(value, datetime):
+        if not isinstance(value, datetime) and value is not None:
             raise TypeError
 
         setattr(self, "_last_item_get_content_time", value)
