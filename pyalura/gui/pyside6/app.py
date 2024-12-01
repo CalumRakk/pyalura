@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication,
     QVBoxLayout,
     QWidget,
@@ -8,9 +8,10 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QFrame,
 )
-from PyQt6.QtCore import Qt, QThread
+from PySide6.QtCore import Qt, QThread
+from PySide6.QtCore import Slot
 import sys
-from pyalura.gui.pyqt6.worker import Worker, WorkerThread
+from pyalura.gui.pyside6.worker import Worker
 
 
 class CustomButton(QPushButton):
@@ -18,8 +19,9 @@ class CustomButton(QPushButton):
         super().__init__(text)
 
         self.main_window = main_window
+        self.setObjectName("primary")
         self.setStyleSheet(
-            """QPushButton {
+            """*, QPushButton#primary {
                 background-color: rgb(255, 255, 255);
                 border: 1.2px solid rgba(49, 51, 63, 0.2);
                 color: rgb(49, 51, 63);
@@ -28,11 +30,24 @@ class CustomButton(QPushButton):
                 border-radius: 4px;
                 text-transform: uppercase;
                 font-weight: 500;
+                
             }
-
-            QPushButton:hover {
+            QPushButton#primary:hover {
                 border-color: rgb(255, 75, 75);
-            }"""
+                color: rgb(255, 75, 75);
+            }
+            QPushButton#primary:pressed {
+                color: rgb(255, 255, 255);
+                border-color: rgb(255, 75, 75);
+                background-color: rgb(255, 75, 75);          
+            }
+            QPushButton#disabled {                
+                color: #fff;
+                background-color: #6c757d;
+                border-color: #6c757d;
+                
+            }
+            """
         )
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.enabled = True
@@ -54,26 +69,34 @@ class CustomButton(QPushButton):
         if self.enabled is False:
             return
 
-        self.enabled = False
         # Crear el hilo y el self.worker
         self.worker = Worker()
-        self.thread = QThread()
+        self.thread: QThread = QThread()
         # Mover el self.worker al hilo creado, para que no se ejecute en el hilo principal
         self.worker.moveToThread(self.thread)
 
         # Conectar señales y slots
+        self.thread.started.connect(self.toggle_enabled)
         self.thread.started.connect(self.worker.run_job)
         self.worker.progress.connect(
             lambda msg: self.main_window.size_label.setText(msg)
         )
         self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(lambda: setattr(self, "enabled", True))
+        self.worker.finished.connect(self.toggle_enabled)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
 
         # Iniciar el hilo
         self.thread.start()
         print("Proceso iniciado")
+
+    @Slot()
+    def toggle_enabled(self):
+        self.enabled = not self.enabled
+        self.setObjectName("disabled" if self.enabled is False else "primary")
+        self.style().unpolish(self)
+        self.style().polish(self)
+        self.update()
 
 
 class LayoutURL(QVBoxLayout):
@@ -149,23 +172,17 @@ class MainWindow(QWidget):
         """Crea y configura el pie de página."""
         footer = QFrame(self)
         footer.setStyleSheet(
-            "color: #505050; background-color: #f0f0f0; padding: 0 15px;"
+            "color: #505050; background-color: #f0f0f0; padding: 0 10 0 10px;"
         )
         footer_layout = QVBoxLayout(footer)
 
-        self.size_label = QLabel("Tamaño: 400 x 300")
+        self.size_label = QLabel()
         self.size_label.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
         )
 
         footer_layout.addWidget(self.size_label)
         return footer
-
-    def resizeEvent(self, event):
-        """Actualiza el tamaño de la ventana al cambiar su tamaño."""
-        new_size = event.size()
-        self.size_label.setText(f"Tamaño: {new_size.width()} x {new_size.height()}")
-        super().resizeEvent(event)
 
 
 if __name__ == "__main__":

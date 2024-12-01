@@ -1,25 +1,48 @@
-from pyalura import Course
-from pydm import PyDM
-import requests_cache
-
-url = "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/87011"
-course = Course(url)
+from PyQt6.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget
+import sys
 
 
-for item in course.iter_items():
-    content = item.get_content()
-    print(
-        f"""
-          item.url: {item.url}
-          item.title: {item.title}
-          item.index: {item.index}
-          item.type: {item.type}
-          section: {item.section.name}          
-          has_content: {bool(content['content'])}
-          is_video: {bool(content['videos'])}      
-          """
-    )
-    download_drr = content["videos"]["hd"]["mp4"]
-    with requests_cache.disabled():
-        pydm = PyDM(download_drr)
-        pydm.download()
+class MainWindow(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Cambiar ObjectName Dinámicamente")
+        self.resize(300, 200)
+
+        layout = QVBoxLayout(self)
+
+        self.button = QPushButton("Click para cambiar estilo")
+        self.button.setObjectName("normal")  # Nombre inicial
+        self.button.setStyleSheet(
+            """
+            QPushButton#normal {
+                background-color: lightgray;
+                color: black;
+            }
+            QPushButton#highlight {
+                background-color: yellow;
+                color: black;
+            }
+            """
+        )
+        self.button.clicked.connect(self.change_object_name)
+
+        layout.addWidget(self.button)
+
+    def change_object_name(self):
+        # Cambiar el nombre del objeto dinámicamente
+        if self.button.objectName() == "normal":
+            self.button.setObjectName("highlight")
+        else:
+            self.button.setObjectName("normal")
+
+        # Forzar la actualización del estilo
+        self.button.style().unpolish(self.button)
+        self.button.style().polish(self.button)
+        self.button.update()
+
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
