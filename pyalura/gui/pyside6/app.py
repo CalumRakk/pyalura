@@ -7,18 +7,25 @@ from PySide6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QFrame,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QHeaderView,
+    QProgressBar,
+    QLayout,
 )
+
 from PySide6.QtCore import Qt, QThread
 from PySide6.QtCore import Slot
 import sys
 from pyalura.gui.pyside6.worker import Worker
+from pyalura import Course
 
 
 class CustomButton(QPushButton):
-    def __init__(self, text, main_window):
+    def __init__(self, text, parent):
         super().__init__(text)
 
-        self.main_window = main_window
+        self.parent = parent
         self.setObjectName("primary")
         self.setStyleSheet(
             """*, QPushButton#primary {
@@ -53,6 +60,10 @@ class CustomButton(QPushButton):
         self.enabled = True
         self.clicked.connect(self.button_clicked)
 
+    @property
+    def main_window(self):
+        return self.parent.main_window
+
     def enterEvent(self, event):
         """Cambia el cursor al pasar sobre el botón."""
         if not self.enabled:
@@ -66,11 +77,13 @@ class CustomButton(QPushButton):
 
     def button_clicked(self):
         # Deshabilitar el botón durante la ejecución
+
         if self.enabled is False:
             return
 
         # Crear el hilo y el self.worker
-        self.worker = Worker()
+        url = self.parent.url_input.text()
+        self.worker = Worker(url)
         self.thread: QThread = QThread()
         # Mover el self.worker al hilo creado, para que no se ejecute en el hilo principal
         self.worker.moveToThread(self.thread)
@@ -81,6 +94,7 @@ class CustomButton(QPushButton):
         self.worker.progress.connect(
             lambda msg: self.main_window.size_label.setText(msg)
         )
+        self.worker.result.connect(self.main_window.add_to_layout_tree_widget)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.toggle_enabled)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -110,7 +124,7 @@ class LayoutURL(QVBoxLayout):
         """Inicia la interfaz de usuario del LayoutURL."""
         # Crear un QLineEdit para ingresar la URL
         self.url_input = self.create_url_input()
-        self.download_button = CustomButton("Descargar", self.main_window)
+        self.download_button = CustomButton("Descargar", self)
 
         # Agregar widgets al layout
         self.addWidget(self.url_input)
@@ -139,12 +153,12 @@ class MainWindow(QWidget):
         self.resize(900, 600)
 
         # Configurar layout principal
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        self.main_layout = QVBoxLayout(self)
+        self.main_layout.setContentsMargins(0, 0, 0, 0)
 
-        self.init_ui(main_layout)
+        self.init_ui(self.main_layout)
 
-    def init_ui(self, main_layout):
+    def init_ui(self, main_layout: QLayout):
         """Inicia la interfaz de usuario del MainWindow."""
         # Título
         self.h1 = self.create_title_label()
@@ -183,6 +197,43 @@ class MainWindow(QWidget):
 
         footer_layout.addWidget(self.size_label)
         return footer
+
+    @Slot(Course)
+    def add_to_layout_tree_widget(self, course: Course):
+        tree_widget = QTreeWidget()
+        tree_widget.setHeaderLabels(["", ""])
+        tree_widget.setStyleSheet("border: none;")
+        tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
+        # curse_path = Path(st.session_state.folder_output) / curso.title_slug
+        # curse_path.mkdir(parents=True, exist_ok=True)
+        folder_structure = {}
+        for section in course.sections:
+            folder_icon = "📁"
+            section_name = f"{folder_icon} {section.index}-{section.title_slug}"
+            folder_structure[section_name] = []
+            for item in section.items:
+                item_name = f"{item.index}-{item.title_slug}"
+                folder_structure[section_name].append(item_name)
+
+        folder_structure = {"📁 Curso": folder_structure}
+        for folder_curse, folders in folder_structure.items():
+            ifolder_curse = QTreeWidgetItem(tree_widget, [folder_curse])
+            ifolder_curse.setExpanded(True)
+            for folder, files in folders.items():
+                ifolder = QTreeWidgetItem(ifolder_curse, [folder])
+                ifolder.setExpanded(True)
+                # tree_widget.addTopLevelItem(ifolder)
+                for file_name in files:
+                    progress_bar = QProgressBar()
+                    progress_bar.setValue(0)
+                    progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                    file_item = QTreeWidgetItem(ifolder, [file_name])
+                    ifolder.addChild(file_item)
+                    tree_widget.setItemWidget(file_item, 1, progress_bar)
+
+        tree_widget.expandAll()
+        self.main_layout.insertWidget(2, tree_widget)
 
 
 if __name__ == "__main__":
