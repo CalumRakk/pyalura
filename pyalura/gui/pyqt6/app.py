@@ -8,13 +8,78 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QFrame,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread
 import sys
+from pyalura.gui.pyqt6.worker import Worker, WorkerThread
+
+
+class CustomButton(QPushButton):
+    def __init__(self, text, main_window):
+        super().__init__(text)
+
+        self.main_window = main_window
+        self.setStyleSheet(
+            """QPushButton {
+                background-color: rgb(255, 255, 255);
+                border: 1.2px solid rgba(49, 51, 63, 0.2);
+                color: rgb(49, 51, 63);
+                line-height: 1.6;
+                padding: 8px 16px;
+                border-radius: 4px;
+                text-transform: uppercase;
+                font-weight: 500;
+            }
+
+            QPushButton:hover {
+                border-color: rgb(255, 75, 75);
+            }"""
+        )
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.enabled = True
+        self.clicked.connect(self.button_clicked)
+
+    def enterEvent(self, event):
+        """Cambia el cursor al pasar sobre el botón."""
+        if not self.enabled:
+            self.setCursor(Qt.CursorShape.ForbiddenCursor)
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        """Restaura el cursor al salir del botón."""
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        super().leaveEvent(event)
+
+    def button_clicked(self):
+        # Deshabilitar el botón durante la ejecución
+        if self.enabled is False:
+            return
+
+        self.enabled = False
+        # Crear el hilo y el self.worker
+        self.worker = Worker()
+        self.thread = QThread()
+        # Mover el self.worker al hilo creado, para que no se ejecute en el hilo principal
+        self.worker.moveToThread(self.thread)
+
+        # Conectar señales y slots
+        self.thread.started.connect(self.worker.run_job)
+        self.worker.progress.connect(
+            lambda msg: self.main_window.size_label.setText(msg)
+        )
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(lambda: setattr(self, "enabled", True))
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        # Iniciar el hilo
+        self.thread.start()
+        print("Proceso iniciado")
 
 
 class LayoutURL(QVBoxLayout):
-    def __init__(self):
+    def __init__(self, main_window):
         super().__init__()
+        self.main_window = main_window
         self.setContentsMargins(15, 0, 15, 0)
         self.init_ui()
 
@@ -22,7 +87,7 @@ class LayoutURL(QVBoxLayout):
         """Inicia la interfaz de usuario del LayoutURL."""
         # Crear un QLineEdit para ingresar la URL
         self.url_input = self.create_url_input()
-        self.download_button = self.create_download_button()
+        self.download_button = CustomButton("Descargar", self.main_window)
 
         # Agregar widgets al layout
         self.addWidget(self.url_input)
@@ -41,29 +106,6 @@ class LayoutURL(QVBoxLayout):
             background-color: rgb(240, 242, 246);}"""
         )
         return url_input
-
-    def create_download_button(self):
-        """Crea el botón de descarga."""
-        download_button = QPushButton("Descargar")
-        download_button.setStyleSheet(
-            """QPushButton {
-                background-color: transparent;
-                border: 1.2px solid rgb(240, 242, 246);
-                color: rgb(49, 51, 63);
-                padding: 8px 16px;
-                border-radius: 4px;
-                text-transform: uppercase;
-                font-weight: 500;
-            }
-
-            QPushButton:hover {
-                border-color: rgb(255, 75, 75);
-            }"""
-        )
-        download_button.setSizePolicy(
-            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed
-        )
-        return download_button
 
 
 class MainWindow(QWidget):
@@ -86,7 +128,7 @@ class MainWindow(QWidget):
         main_layout.addWidget(self.h1)
 
         # Layout para URL
-        layout_url = LayoutURL()
+        layout_url = LayoutURL(main_window=self)
         main_layout.addLayout(layout_url)
 
         # Spacer: Empuja el footer hacia la parte inferior
