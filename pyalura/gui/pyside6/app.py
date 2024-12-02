@@ -94,7 +94,7 @@ class CustomButton(QPushButton):
         self.worker.progress.connect(
             lambda msg: self.main_window.size_label.setText(msg)
         )
-        self.worker.result.connect(self.main_window.add_to_layout_tree_widget)
+        self.worker.result.connect(self.main_window.add_items_to_tree_widget)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.toggle_enabled)
         self.worker.finished.connect(self.worker.deleteLater)
@@ -154,11 +154,9 @@ class MainWindow(QWidget):
 
         # Configurar layout principal
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.init_ui(self.main_layout)
         self.main_layout.setContentsMargins(15, 0, 15, 0)
         self.main_layout.setSpacing(10)
+        self.init_ui(self.main_layout)
 
     def init_ui(self, main_layout: QLayout):
         """Inicia la interfaz de usuario del MainWindow."""
@@ -172,6 +170,10 @@ class MainWindow(QWidget):
 
         # Spacer: Empuja el footer hacia la parte inferior
         main_layout.addStretch()
+
+        # Tree Widget
+        self.tree_widget = self.create_tree_widget()
+        main_layout.addWidget(self.tree_widget, stretch=2)
 
         # Footer
         footer = self.create_footer()
@@ -202,12 +204,13 @@ class MainWindow(QWidget):
         footer_layout.addWidget(self.size_label)
         return footer
 
-    @Slot(Course)
-    def add_to_layout_tree_widget(self, course: Course, index_layout: int = 2):
+    def create_tree_widget(self):
         tree_widget = QTreeWidget()
-        tree_widget.setHeaderLabels(["Elementos", "Progreso"])
+        tree_widget.setHeaderLabels(["", ""])
         tree_widget.setStyleSheet("border: none;")
         tree_widget.header().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
+        tree_widget.header().setHidden(True)
+
         tree_widget.header().setSectionResizeMode(
             QHeaderView.ResizeMode.ResizeToContents
         )
@@ -215,10 +218,14 @@ class MainWindow(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
 
-        tree_widget.setContentsMargins(50, 0, 15, 0)
+        return tree_widget
 
+    @Slot(Course)
+    def add_items_to_tree_widget(self, course: Course):
         # curse_path = Path(st.session_state.folder_output) / curso.title_slug
         # curse_path.mkdir(parents=True, exist_ok=True)
+        self.tree_widget.clear()
+
         folder_structure = {}
         for section in course.sections:
             folder_icon = "📁"
@@ -230,7 +237,7 @@ class MainWindow(QWidget):
 
         folder_structure = {"📁 Curso": folder_structure}
         for folder_curse, folders in folder_structure.items():
-            ifolder_curse = QTreeWidgetItem(tree_widget, [folder_curse])
+            ifolder_curse = QTreeWidgetItem(self.tree_widget, [folder_curse])
             ifolder_curse.setExpanded(True)
             for folder, files in folders.items():
                 ifolder = QTreeWidgetItem(ifolder_curse, [folder])
@@ -242,10 +249,9 @@ class MainWindow(QWidget):
                     progress_bar.setAlignment(Qt.AlignmentFlag.AlignCenter)
                     file_item = QTreeWidgetItem(ifolder, [file_name])
                     ifolder.addChild(file_item)
-                    tree_widget.setItemWidget(file_item, 1, progress_bar)
+                    self.tree_widget.setItemWidget(file_item, 1, progress_bar)
 
-        tree_widget.expandAll()
-        self.main_layout.insertWidget(index_layout, tree_widget, stretch=2)
+        self.tree_widget.expandAll()
 
 
 if __name__ == "__main__":
