@@ -117,7 +117,7 @@ class LayoutURL(QVBoxLayout):
     def __init__(self, main_window):
         super().__init__()
         self.main_window = main_window
-        self.setContentsMargins(15, 0, 15, 0)
+
         self.init_ui()
 
     def init_ui(self):
@@ -157,6 +157,8 @@ class MainWindow(QWidget):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.init_ui(self.main_layout)
+        self.main_layout.setContentsMargins(15, 0, 15, 0)
+        self.main_layout.setSpacing(10)
 
     def init_ui(self, main_layout: QLayout):
         """Inicia la interfaz de usuario del MainWindow."""
@@ -175,10 +177,12 @@ class MainWindow(QWidget):
         footer = self.create_footer()
         main_layout.addWidget(footer)
 
+        main_layout.setContentsMargins(5, 0, 5, 0)
+
     def create_title_label(self):
         """Crea y configura el título de la ventana."""
         h1 = QLabel("📂 Descargar cursos de Alura")
-        h1.setStyleSheet("font-size: 24px; font-weight: bold; padding: 0 15px;")
+        h1.setStyleSheet("font-size: 24px; font-weight: bold;")
         h1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         return h1
 
@@ -199,11 +203,19 @@ class MainWindow(QWidget):
         return footer
 
     @Slot(Course)
-    def add_to_layout_tree_widget(self, course: Course):
+    def add_to_layout_tree_widget(self, course: Course, index_layout: int = 2):
         tree_widget = QTreeWidget()
-        tree_widget.setHeaderLabels(["", ""])
+        tree_widget.setHeaderLabels(["Elementos", "Progreso"])
         tree_widget.setStyleSheet("border: none;")
-        tree_widget.header().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        tree_widget.header().setDefaultAlignment(Qt.AlignmentFlag.AlignCenter)
+        tree_widget.header().setSectionResizeMode(
+            QHeaderView.ResizeMode.ResizeToContents
+        )
+        tree_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+
+        tree_widget.setContentsMargins(50, 0, 15, 0)
 
         # curse_path = Path(st.session_state.folder_output) / curso.title_slug
         # curse_path.mkdir(parents=True, exist_ok=True)
@@ -233,7 +245,7 @@ class MainWindow(QWidget):
                     tree_widget.setItemWidget(file_item, 1, progress_bar)
 
         tree_widget.expandAll()
-        self.main_layout.insertWidget(2, tree_widget)
+        self.main_layout.insertWidget(index_layout, tree_widget, stretch=2)
 
 
 if __name__ == "__main__":

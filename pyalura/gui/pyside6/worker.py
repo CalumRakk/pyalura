@@ -14,7 +14,7 @@ class Worker(QObject):
 
     def run_job(self):
         self.progress.emit(f"Obteniendo contenido del curso...")
-        time.sleep(5)
+
         course = Course(self.url)
         self.progress.emit(f"{course.title} obtenido")
         self.result.emit(course)
