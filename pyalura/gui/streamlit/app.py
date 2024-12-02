@@ -1,7 +1,7 @@
 from pathlib import Path
 import streamlit as st
-from pyalura.gui.textarea import TextArea
-from pyalura.gui.utils import display_path_tree
+from pyalura.gui.streamlit.textarea import TextArea
+from pyalura.gui.streamlit.utils import display_path_tree
 from pyalura.cookie_manager import CookieManager
 import time
 

@@ -37,6 +37,7 @@ class CustomButton(QPushButton):
                 border-radius: 4px;
                 text-transform: uppercase;
                 font-weight: 500;
+                margin: 0 0 16px 0;
                 
             }
             QPushButton#primary:hover {
@@ -125,10 +126,12 @@ class LayoutURL(QVBoxLayout):
         # Crear un QLineEdit para ingresar la URL
         self.url_input = self.create_url_input()
         self.download_button = CustomButton("Descargar", self)
+        self.line = self.create_line()
 
         # Agregar widgets al layout
         self.addWidget(self.url_input)
-        self.addWidget(self.download_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.addWidget(self.download_button)
+        self.addWidget(self.line, alignment=Qt.AlignmentFlag.AlignTop)
 
     def create_url_input(self):
         """Crea el QLineEdit para ingresar la URL."""
@@ -144,6 +147,12 @@ class LayoutURL(QVBoxLayout):
         )
         return url_input
 
+    def create_line(self):
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        return line
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -154,8 +163,6 @@ class MainWindow(QWidget):
 
         # Configurar layout principal
         self.main_layout = QVBoxLayout(self)
-        self.main_layout.setContentsMargins(15, 0, 15, 0)
-        self.main_layout.setSpacing(10)
         self.init_ui(self.main_layout)
 
     def init_ui(self, main_layout: QLayout):
@@ -175,11 +182,12 @@ class MainWindow(QWidget):
         self.tree_widget = self.create_tree_widget()
         main_layout.addWidget(self.tree_widget, stretch=2)
 
-        # Footer
-        footer = self.create_footer()
-        main_layout.addWidget(footer)
+        # # Footer
+        # footer_layout = self.create_footer()
+        # main_layout.addChildLayout(footer_layout)
 
-        main_layout.setContentsMargins(5, 0, 5, 0)
+        main_layout.setContentsMargins(32, 16, 32, 0)
+        main_layout.setSpacing(16)
 
     def create_title_label(self):
         """Crea y configura el título de la ventana."""
@@ -188,12 +196,12 @@ class MainWindow(QWidget):
         h1.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         return h1
 
-    def create_footer(self):
+    def create_footer(self) -> QLayout:
         """Crea y configura el pie de página."""
         footer = QFrame(self)
-        footer.setStyleSheet(
-            "color: #505050; background-color: #f0f0f0; padding: 0 10 0 10px;"
-        )
+        # footer.setStyleSheet(
+        #     "color: #505050; background-color: #f0f0f0; padding: 0 10 0 10px;"
+        # )
         footer_layout = QVBoxLayout(footer)
 
         self.size_label = QLabel()
@@ -202,7 +210,7 @@ class MainWindow(QWidget):
         )
 
         footer_layout.addWidget(self.size_label)
-        return footer
+        return footer_layout
 
     def create_tree_widget(self):
         tree_widget = QTreeWidget()
