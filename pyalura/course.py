@@ -31,7 +31,7 @@ class Course(Base):
             r = self._make_request(self.continue_course_url, method="HEAD")
             url_course = r.headers["location"]
 
-            if not "continue" in url_course:
+            if r.headers.get("location") is None:
                 logger.info("El curso no ha sido iniciado")
                 logger.debug("Try to enroll (Iniciando Curso...)")
                 path_tryToEnroll = f"/courses/{self.title}/tryToEnroll"

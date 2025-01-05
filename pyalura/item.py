@@ -1,14 +1,15 @@
 from datetime import datetime, timedelta
 from pyalura.utils import ArticleType
 from pyalura import utils
+from pathlib import Path
 import html2text
 from .base import Base
 from lxml import html
 from urllib.parse import urlparse, parse_qs, urljoin
-from requests_cache import CachedResponse
-import requests_cache
 import random
 from typing import TYPE_CHECKING
+from pyalura.item_utils import get_answers
+from pyalura.choice import Answer, Choice
 
 if TYPE_CHECKING:
     from pyalura.section import Section
@@ -16,13 +17,20 @@ if TYPE_CHECKING:
 
 class Item(Base):
     def __init__(
-        self, url: str, title: str, index: str, type: ArticleType, section: "Section"
+        self,
+        url: str,
+        title: str,
+        index: str,
+        type: ArticleType,
+        section: "Section",
+        is_marked_as_seen: bool,
     ):
         self.url = url
         self.title = title
         self.index = index
         self.type = type
         self.section = section
+        self.is_marked_as_seen = is_marked_as_seen
         super().__init__()
 
     def get_content(self) -> dict:
@@ -34,25 +42,26 @@ class Item(Base):
 
         response = self._make_request(self.url)
         root = html.fromstring(response.text)
-        is_cache = isinstance(response, CachedResponse)
 
-        if is_cache:
-            self.section.course.last_item_get_content_time = None
-        else:
-            self.section.course.last_item_get_content_time = datetime.now()
+        self.section.course.last_item_get_content_time = datetime.now()
 
         item_content = self._get_content(root)
         item_raw_html = response.text
         videos = None
+        choices = None
 
-        if self.type == utils.ArticleType.VIDEO:
+        if self.is_video:
             videos = self._fetch_item_video()
+        if self.is_choice:
+            choice = Choice(answers=None, item=self)
+            answers = [Answer(choice=choice, **i) for i in get_answers(root)]
+            choice.answers = answers
 
         return {
             "videos": videos,
             "content": item_content,
             "raw_html": item_raw_html,
-            "is_cache": is_cache,
+            "choice": choice,
         }
 
     def _should_wait_for_request(self) -> bool:
@@ -95,14 +104,6 @@ class Item(Base):
         response = self._make_request(url_api)
         videos = response.json()
         videos = {i["quality"]: i for i in videos}
-
-        if isinstance(response, CachedResponse) and self._is_video_expired(
-            videos["hd"]["mp4"]
-        ):
-            cache = requests_cache.get_cache()
-            cache.delete(response.cache_key)
-            return self._fetch_item_video()
-
         return videos
 
     def _get_content(self, root) -> str:
@@ -122,3 +123,34 @@ class Item(Base):
         """
         string = html2text.html2text(html_content.decode("UTF-8"))
         return f"# {header}\n\n{string}"
+
+    def mark_as_watched(self):
+        if self.is_video and not self.is_marked_as_seen:
+            self._make_request(self.url)
+
+            url_api = f"{self.url}/mark-video"
+            course_code = Path(urlparse(self.url).path).parent.parent.name
+            data = {
+                "courseCode": course_code,
+                "videoTaskId": self.taks_id,
+            }
+            response = self._make_request(url=url_api, method="POST", data=data)
+            if response.reason is "OK":
+                self.is_marked_as_seen = True
+        elif self.is_choice and not self.is_marked_as_seen:
+            content = self.get_content()
+            choice = content["choice"]
+            answers = [answer for answer in choice.answers if answer.is_correct]
+            choice.send_answers(answers)
+
+    @property
+    def taks_id(self) -> str:
+        return Path(urlparse(self.url).path).name
+
+    @property
+    def is_video(self) -> bool:
+        return self.type == utils.ArticleType.VIDEO
+
+    @property
+    def is_choice(self) -> bool:
+        return self.type.is_choice

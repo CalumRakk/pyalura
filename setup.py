@@ -11,7 +11,6 @@ setup(
         "lxml",
         "requests",
         "html2text",
-        "requests_cache",
         "Unidecode",
         "streamlit",
     ],

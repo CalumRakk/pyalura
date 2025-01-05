@@ -6,7 +6,6 @@ import time
 import logging
 
 from lxml.html import HtmlElement
-import requests_cache
 import re
 
 
@@ -32,13 +31,6 @@ logger.info(
     =====================
      Incio del programa
     ====================="""
-)
-
-requests_cache.install_cache(
-    "http_cache",
-    expire_after=None,
-    allowable_methods=("GET", "POST", "HEAD"),
-    allowable_codes=(200, 302),
 )
 
 HOST = "https://app.aluracursos.com"
@@ -87,6 +79,10 @@ class ArticleType(enum.Enum):
     MULTIPLE_CHOICE = 7
     HQ_EXPLANATION = 8
     CHALLENGE = 9
+
+    @property
+    def is_choice(self):
+        return self in [ArticleType.SINGLE_CHOICE, ArticleType.MULTIPLE_CHOICE]
 
 
 def get_course_sections(root: "HtmlElement"):
@@ -168,7 +164,18 @@ def get_items(root: "HtmlElement") -> list[dict]:
         type = getattr(
             ArticleType, articulo.find(".//use").get("xlink:href").split("#")[1]
         )
-        articulos.append({"url": url, "title": title, "index": index, "type": type})
+        is_marked_as_seen = "task-menu-nav-item-svg--done" in articulo.find(
+            ".//svg"
+        ).get("class")
+        articulos.append(
+            {
+                "url": url,
+                "title": title,
+                "index": index,
+                "type": type,
+                "is_marked_as_seen": is_marked_as_seen,
+            }
+        )
 
     return articulos
 

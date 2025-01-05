@@ -1,7 +1,6 @@
 from pathlib import Path
 import json
 import requests
-import requests_cache
 from lxml import html
 
 headers = {
@@ -79,15 +78,15 @@ class CookieManager:
 
     def check_cookies(self):
         cookies = self.get_cookies()
-        with requests_cache.disabled():
-            url = "https://app.aluracursos.com/dashboard"
-            response = requests.get(
-                url,
-                cookies=cookies,
-                headers=self.headers,
-            )
-            if self.is_dashboard_page(response):
-                return True
+
+        url = "https://app.aluracursos.com/dashboard"
+        response = requests.get(
+            url,
+            cookies=cookies,
+            headers=self.headers,
+        )
+        if self.is_dashboard_page(response):
+            return True
         return False
 
 

@@ -20,7 +20,7 @@ class Base:
     def headers(self):
         return self.cookie_manager.headers
 
-    def _make_request(self, url, method="GET"):
+    def _make_request(self, url, method="GET", **kwargs):
         logger.debug(f"Request: {url}, method: {method}")
 
         if method.upper() == "GET":
@@ -32,11 +32,7 @@ class Base:
         else:
             raise NotImplementedError
 
-        response = method(
-            url,
-            cookies=self.cookies,
-            headers=self.headers,
-        )
+        response = method(url, cookies=self.cookies, headers=self.headers, **kwargs)
         logger.debug(f"Response: {response.status_code}")
         response.raise_for_status()
         return response

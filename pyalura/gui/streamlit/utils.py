@@ -3,7 +3,6 @@ from pyalura import Course
 from pathlib import Path
 from pyalura.utils import ArticleType
 from pydm import PyDM
-import requests_cache
 import time
 
 
@@ -114,9 +113,8 @@ def display_path_tree(level=0):
                         download_drr = content["videos"]["hd"]["mp4"]
                         st.toast(f"Descargando: {output.name[:19]}...", icon="🔄")
 
-                        with requests_cache.disabled():
-                            pydm = PyDM(download_drr, output=output, folder_temp="temp")
-                            pydm.download()
+                        pydm = PyDM(download_drr, output=output, folder_temp="temp")
+                        pydm.download()
 
                         output.with_suffix(SUFFIX_MD).write_text(content["content"])
                         msg.toast(f"Descargado: {output.name[:19]}...", icon=icon)
