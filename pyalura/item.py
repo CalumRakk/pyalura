@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta
 from pyalura.utils import ArticleType
 from pyalura import utils
@@ -7,15 +8,33 @@ from .base import Base
 from lxml import html
 from urllib.parse import urlparse, parse_qs, urljoin
 import random
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
+
 from pyalura.item_utils import get_answers
 from pyalura.choice import Answer, Choice
 
 if TYPE_CHECKING:
     from pyalura.section import Section
 
+logger = logging.getLogger(__name__)
+
 
 class Item(Base):
+    """
+    Representa un elemento individual dentro de una sección del curso, que puede ser un video, tarea, etc.
+
+    Esta clase se encarga de obtener, gestionar y manipular la información
+    de un elemento específico, ya sea su contenido, videos asociados o respuestas a preguntas.
+
+    Atributos:
+        url (str): URL del elemento.
+        title (str): Título del elemento.
+        index (str): Índice del elemento dentro de la sección.
+        type (ArticleType): Tipo del elemento (video, tarea, etc.).
+        section (Section): Sección a la que pertenece el elemento.
+        is_marked_as_seen (bool): Indica si el elemento ha sido marcado como visto.
+    """
+
     def __init__(
         self,
         url: str,
@@ -32,11 +51,23 @@ class Item(Base):
         self.section = section
         self.is_marked_as_seen = is_marked_as_seen
         super().__init__()
+        logger.debug(f"Item creado: {self.title} ({self.url})")
 
     def get_content(self) -> dict:
         """
-        Devuelve el contenido del episodio/tarea del curso.
+        Obtiene el contenido del episodio/tarea del curso.
+
+        Esto incluye el contenido en formato markdown, videos asociados (si los hay),
+        y las opciones de respuestas (si son preguntas de opción múltiple).
+
+        Returns:
+            dict: Un diccionario con el contenido del item, videos, respuestas y el HTML original.
+                *   `videos`: Un diccionario con la información de los videos del item (si es un video).
+                *   `content`: El contenido del item en formato markdown.
+                *   `raw_html`: El HTML original del item.
+                *   `choice`: Un objeto Choice con las opciones de respuesta (si es una tarea).
         """
+        logger.info(f"Obteniendo contenido del item: {self.title} ({self.url})")
         if self._should_wait_for_request():
             self._wait_for_request()
 
@@ -48,7 +79,7 @@ class Item(Base):
         item_content = self._get_content(root)
         item_raw_html = response.text
         videos = None
-        choices = None
+        choice = None
 
         if self.is_video:
             videos = self._fetch_item_video()
@@ -56,7 +87,11 @@ class Item(Base):
             choice = Choice(answers=None, item=self)
             answers = [Answer(choice=choice, **i) for i in get_answers(root)]
             choice.answers = answers
+            logger.debug(
+                f"Obtenida la información de las respuestas para el item: {self.title}"
+            )
 
+        logger.debug(f"Contenido del item: {self.title} obtenido con éxito")
         return {
             "videos": videos,
             "content": item_content,
@@ -66,66 +101,139 @@ class Item(Base):
 
     def _should_wait_for_request(self) -> bool:
         """
-        Devuelve True si es necesario esperar antes de hacer la siguiente solicitud.
+        Verifica si se debe esperar antes de realizar una solicitud.
+
+        Comprueba si ha pasado suficiente tiempo desde la última solicitud al backend.
+        Esto se utiliza para no saturar el servidor de Alura con peticiones.
+
+        Returns:
+            bool: True si debe esperar, False en caso contrario.
         """
         if self.section.course.last_item_get_content_time is None:
+            logger.debug(
+                f"No se requiere esperar, no hay registro de última petición para el item: {self.title}"
+            )
             return False
 
         diff_time = datetime.now() - self.section.course.last_item_get_content_time
-        if diff_time.total_seconds() < 15:
-            return True
-        return False
+        wait_condition = diff_time.total_seconds() < 15
+        logger.debug(
+            f"Validando si se requiere esperar para el item: {self.title}. Condición: {wait_condition}"
+        )
+        return wait_condition
 
     def _wait_for_request(self):
         """
-        Pausa el programa si es necesario esperar antes de hacer la siguiente solicitud.
+        Pausa la ejecución del programa durante un tiempo aleatorio.
+
+        Esta pausa ayuda a evitar saturar el servidor con múltiples peticiones en un corto periodo.
         """
         randint = random.randint(5, 30)
+        logger.debug(
+            f"Esperando {randint} segundos antes de realizar la petición al servidor para el item: {self.title}"
+        )
         utils.sleep_program(randint)
         self.section.course.last_item_get_content_time = datetime.now()
 
     def _is_video_expired(self, video_url: str) -> bool:
         """
-        Verifica si el video ha expirado en el caché.
+        Verifica si la URL del video ha expirado.
+
+        Analiza la URL del video y comprueba si la fecha de expiración ha sido alcanzada.
+
+        Args:
+            video_url (str): URL del video a verificar.
+
+        Returns:
+            bool: True si la URL ha expirado, False en caso contrario.
         """
+        logger.debug(f"Verificando si la url del video: {video_url} ha expirado")
         url_parsed = urlparse(video_url)
         query_params = {
             key: value[0] for key, value in parse_qs(url_parsed.query).items()
         }
         expires = int(query_params["X-Amz-Expires"])
         request_time = datetime.strptime(query_params["X-Amz-Date"], "%Y%m%dT%H%M%SZ")
-        return datetime.utcnow() - request_time >= timedelta(seconds=expires)
+        expired = datetime.utcnow() - request_time >= timedelta(seconds=expires)
+        logger.debug(f"Resultado de verificación de expiración del video: {expired}")
+        return expired
 
     def _fetch_item_video(self) -> dict:
         """
-        Obtiene los videos del artículo.
+        Obtiene la información de los videos asociados a un elemento.
+
+        Realiza una petición a la API para obtener la información de los videos, incluyendo diferentes calidades.
+
+        Returns:
+            dict: Un diccionario con la información de los videos.
         """
+        logger.info(
+            f"Obteniendo información de los videos del item: {self.title} ({self.url})"
+        )
         url_api = f"{urljoin('https://app.aluracursos.com/', self.url)}/video"
         response = self._make_request(url_api)
         videos = response.json()
         videos = {i["quality"]: i for i in videos}
+        logger.debug(
+            f"Información de los videos para el item: {self.title} obtenida correctamente"
+        )
         return videos
 
     def _get_content(self, root) -> str:
         """
-        Extrae y convierte el contenido HTML de un episodio/tarea en formato Markdown.
+        Extrae el contenido HTML del elemento y lo convierte a formato Markdown.
+
+        Busca el elemento HTML que contiene el contenido principal de la tarea y lo convierte a Markdown.
+
+        Args:
+            root (html.HtmlElement): El elemento raíz del HTML del item.
+
+        Returns:
+            str: El contenido del item en formato Markdown.
+        Raises:
+            ValueError: Si no se encuentra el contenido del item.
         """
+        logger.debug(
+            f"Extrayendo contenido HTML a Markdown del item: {self.title} ({self.url})"
+        )
         element = root.find(".//section[@id='task-content']")
         if element is None:
-            raise ValueError("No se encontró el contenido de la tarea.")
+            logger.error(
+                f"No se encontró el contenido de la tarea para el item: {self.title} ({self.url})"
+            )
+            raise ValueError(
+                f"No se encontró el contenido de la tarea para el item: {self.title}"
+            )
         header = root.find(".//span[@class='task-body-header-title-text']").text.strip()
         content = html.tostring(element)
-        return self._convert_html_to_markdown(content, header)
+        markdown_content = self._convert_html_to_markdown(content, header)
+        logger.debug(f"Contenido Markdown del item: {self.title} extraído con éxito")
+        return markdown_content
 
     def _convert_html_to_markdown(self, html_content: bytes, header: str) -> str:
         """
-        Convierte el contenido HTML a formato Markdown.
+        Convierte un bloque de HTML a formato Markdown.
+
+        Args:
+            html_content (bytes): El contenido HTML a convertir.
+            header (str): El encabezado del contenido.
+
+        Returns:
+            str: El contenido en formato Markdown con el encabezado.
         """
+        logger.debug(f"Convirtiendo HTML a Markdown")
         string = html2text.html2text(html_content.decode("UTF-8"))
         return f"# {header}\n\n{string}"
 
     def mark_as_watched(self):
+        """
+        Marca un video o tarea como vista en la plataforma.
+
+        Para videos, realiza una petición a la API para marcar el video como visto.
+        Para tareas, obtiene las respuestas correctas y las envía al backend.
+        """
         if self.is_video and not self.is_marked_as_seen:
+            logger.info(f"Marcando el video como visto: {self.title} ({self.url})")
             self._make_request(self.url)
 
             url_api = f"{self.url}/mark-video"
@@ -135,22 +243,42 @@ class Item(Base):
                 "videoTaskId": self.taks_id,
             }
             response = self._make_request(url=url_api, method="POST", data=data)
-            if response.reason is "OK":
+            if response.reason == "OK":
                 self.is_marked_as_seen = True
-        elif self.is_choice and not self.is_marked_as_seen:
-            content = self.get_content()
-            choice = content["choice"]
-            answers = [answer for answer in choice.answers if answer.is_correct]
-            choice.send_answers(answers)
+                logger.info(f"Video: {self.title} marcado como visto con exito")
 
     @property
     def taks_id(self) -> str:
-        return Path(urlparse(self.url).path).name
+        """
+        Devuelve el ID de la tarea extraído de la URL.
+
+        Returns:
+            str: El ID de la tarea.
+        """
+        task_id = Path(urlparse(self.url).path).name
+        logger.debug(f"Obteniendo el task_id: {task_id} del item: {self.title}")
+        return task_id
 
     @property
     def is_video(self) -> bool:
-        return self.type == utils.ArticleType.VIDEO
+        """
+        Verifica si el elemento es de tipo video.
+
+        Returns:
+            bool: True si el elemento es un video, False en caso contrario.
+        """
+        is_video = self.type == utils.ArticleType.VIDEO
+        logger.debug(f"Validando si el item: {self.title} es video: {is_video}")
+        return is_video
 
     @property
     def is_choice(self) -> bool:
-        return self.type.is_choice
+        """
+        Verifica si el elemento es de tipo choice (pregunta de opción múltiple).
+
+        Returns:
+            bool: True si el elemento es una pregunta de opción múltiple, False en caso contrario.
+        """
+        is_choice = self.type.is_choice
+        logger.debug(f"Validando si el item: {self.title} es choice: {is_choice}")
+        return is_choice

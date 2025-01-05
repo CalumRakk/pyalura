@@ -12,3 +12,4 @@ temp/
 pruebas/
 .venv/
 script.py
+*.log

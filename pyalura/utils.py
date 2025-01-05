@@ -5,8 +5,22 @@ from datetime import timedelta
 import time
 import logging
 
+
 from lxml.html import HtmlElement
 import re
+
+
+def sleep_progress(seconds):
+    minutes = int(timedelta(seconds=seconds).total_seconds() // 60)
+
+    logger.info(f"Esperando {minutes} minutos antes de continuar...")
+    count = 0
+    for i in range(int(seconds), 0, -1):
+        time.sleep(1)
+        count += 1
+        if count % 60 == 0:
+            minutes -= 1
+            logger.info(f"Esperando {minutes} minutos antes de continuar...")
 
 
 def sanitize_filename(filename):
@@ -17,13 +31,16 @@ def sanitize_filename(filename):
 
 
 logging.basicConfig(
-    filename="log.txt",
-    filemode="a",
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
     datefmt="%d-%m-%Y %I:%M:%S %p",
-    level=logging.DEBUG,
+    level=logging.INFO,
     encoding="utf-8",
+    handlers=[
+        logging.FileHandler("alura.log"),  # Log a archivo
+        logging.StreamHandler(),  # Log a consola
+    ],
 )
+
 
 logger = logging.getLogger(__name__)
 logger.info(
@@ -178,17 +195,3 @@ def get_items(root: "HtmlElement") -> list[dict]:
         )
 
     return articulos
-
-
-def sleep_program(sleep_seconds: int):
-    if sleep_seconds <= 0:
-        return
-
-    while sleep_seconds > 0:
-        print(f"Esperando: {timedelta(seconds=sleep_seconds)}", end="\r")
-        sleep_seconds -= 1
-        time.sleep(1)
-
-    last_msg = f"Esperando: {timedelta(seconds=0)}"
-    print(last_msg, end="\r")
-    print(" " * len(last_msg), end="\r")
