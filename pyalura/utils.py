@@ -70,7 +70,11 @@ def add_slash(url):
 
 def extract_base_url(url):
     """
+
     Obtiene la 'URL base del curso' de una url quitando todas las subrutas de la url.
+
+    Ejemplo:
+    https://app.aluracursos.com/course/...est-java/task/83409 -> https://app.aluracursos.com/course/spring-boot-3-desarrollar-api-rest-java
     """
     urlparsed = urlparse(url)
     url_parts = Path(urlparsed.path).parts
@@ -87,6 +91,21 @@ def extract_name_url(url):
 
 
 class ArticleType(enum.Enum):
+    """
+    Enumeración de los tipos de artículos de la plataforma Alura.
+
+    - VIDEO: El artículo es un video.
+    - COMPLEMENTARY_INFORMATION: (documento de texto) El articulo es una informacion complementaria.
+    - SETUP_EXPLANATION: (documento de texto) El articulo es una explicacion de configuracion.
+    - SINGLE_CHOICE: (Texto con un Choice) El articulo es una pregunta de respuesta unica.
+    - DO_AFTER_ME
+    - WHAT_WE_LEARNED:
+    - MULTIPLE_CHOICE: (Texto con un Choice) El articulo es una pregunta de respuesta multiple.
+    - HQ_EXPLANATION: (documento de texto) El articulo es una explicacion de la pregunta.
+    - CHALLENGE
+    - LINK_SUBMIT: (Texto con un form para enviar un link) El articulo es un envio de link.
+    """
+
     VIDEO = 1
     COMPLEMENTARY_INFORMATION = 2
     SETUP_EXPLANATION = 3
@@ -96,6 +115,7 @@ class ArticleType(enum.Enum):
     MULTIPLE_CHOICE = 7
     HQ_EXPLANATION = 8
     CHALLENGE = 9
+    LINK_SUBMIT = 10
 
     @property
     def is_choice(self):

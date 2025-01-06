@@ -232,7 +232,12 @@ class Item(Base):
         Para videos, realiza una petición a la API para marcar el video como visto.
         Para tareas, obtiene las respuestas correctas y las envía al backend.
         """
-        if self.is_video and not self.is_marked_as_seen:
+        if self.type == ArticleType.LINK_SUBMIT and not self.is_marked_as_seen:
+            logger.info(
+                f"El articulo {self.url} no se puede marcar como visto. Es un formulario para enviar un link"
+            )
+            return
+        elif self.is_video and not self.is_marked_as_seen:
             logger.info(f"Marcando el video como visto: {self.title} ({self.url})")
             self._make_request(self.url)
 
@@ -246,6 +251,13 @@ class Item(Base):
             if response.reason == "OK":
                 self.is_marked_as_seen = True
                 logger.info(f"Video: {self.title} marcado como visto con exito")
+        elif not self.is_choice and not self.is_marked_as_seen:
+            logging.info("Marcando tarea como vista")
+            self._make_request(self.url)
+            self.is_marked_as_seen = True
+
+    def resolve_choice(self):
+        pass
 
     @property
     def taks_id(self) -> str:

@@ -21,20 +21,29 @@ class Course(Base):
     como su URL, secciones, y el acceso a los items del mismo.
 
     Atributos:
-        url_origin (str): La URL original del curso.
-        base_course_url (str): La URL base del curso.
-        continue_course_url (str): La URL para continuar el curso.
+        url (str): La URL original del curso.
+        url_base (str): La URL base del curso.
         title (str): El título del curso extraído de la URL.
     """
 
     def __init__(self, url: str):
-        self.url_origin = url
-        self.base_course_url = utils.extract_base_url(self.url_origin)
-        self.continue_course_url = utils.add_slash(self.base_course_url) + "continue/"
-        self.title = utils.extract_name_url(self.url_origin)
+        self.url = url
+        self.url_base = utils.extract_base_url(self.url)
+        self.title = utils.extract_name_url(self.url)
 
-        logger.debug(f"Course inicializado con URL: {self.url_origin}")
+        logger.info(f"Course instanciado con URL: {self.url}")
         super().__init__()
+
+    def __get_course_url_button_access(self) -> bool:
+        logger.info("Obteniendo la URL del boton principal para ver el curso")
+        root_base = self._fetch_root(self.url_base)
+        url_relative = root_base.find(
+            ".//section[@class='course']//div[@class='container']/a"
+        ).get("href")
+        url_botton_access = urljoin(HOST, url_relative)
+        setattr(self, "_course_url_button_access", url_botton_access)
+        logger.info(f"URL obtenida: {url_botton_access}")
+        return url_botton_access
 
     @property
     def sections(self) -> list["Section"]:
@@ -47,26 +56,31 @@ class Course(Base):
             list[Section]: Lista de objetos Section que componen el curso.
         """
         if not hasattr(self, "_course_sections"):
-            logger.debug(f"Obteniendo secciones del curso: {self.title}")
-            r = self._make_request(self.continue_course_url, method="HEAD")
+            url_botton_access = self.__get_course_url_button_access()
+
+            if url_botton_access.endswith("access"):
+                logger.info(f"El curso '{self.title}' aparece como completado.")
+                r_temp = self._make_request(url_botton_access, method="HEAD")
+                url_botton_access = r_temp.headers["location"]
+            elif url_botton_access.endswith("continue"):
+                logger.info(f"El curso '{self.title}' aparece como NO completado.")
+            elif url_botton_access.endswith("tryToEnroll"):
+                logger.info(f"El curso '{self.title}' aparece NO iniciado.")
+                r_temp = self._make_request(url_botton_access, method="HEAD")
+                url_botton_access = r_temp.headers["location"]
+            else:
+                raise NotImplementedError
+
+            r = self._make_request(url_botton_access, method="HEAD")
             url_course = r.headers["location"]
-
-            if r.headers.get("location") is None:
-                logger.info(f"El curso '{self.title}' no ha sido iniciado.")
-                logger.debug(f"Intentando iniciar el curso '{self.title}'...")
-                path_tryToEnroll = f"/courses/{self.title}/tryToEnroll"
-                url_tryToEnroll = urljoin(HOST, path_tryToEnroll)
-                r2 = self._make_request(url_tryToEnroll, method="HEAD")
-                url_course = r2.headers["location"]
-
             root = self._fetch_root(url_course)
             page_title = root.find(".//title").text.strip()
-            logger.debug(f"Título de la página: {page_title}")
+            logger.info(f"Título de la página: {page_title}")
 
             course_sections = [
                 Section(**i, course=self) for i in utils.get_course_sections(root)
             ]
-            logger.debug(
+            logger.info(
                 f"Secciones del curso: {len(course_sections)}, primer elemento: {course_sections[0].__dict__}"
             )
             setattr(self, "_course_sections", course_sections)
@@ -98,7 +112,7 @@ class Course(Base):
             raise TypeError("El valor debe ser un objeto datetime o None")
 
         setattr(self, "_last_item_get_content_time", value)
-        logger.debug(f"Estableciendo last_item_get_content_time a: {value}")
+        logger.info(f"Estableciendo last_item_get_content_time a: {value}")
         return getattr(self, "_last_item_get_content_time")
 
     def iter_items(self) -> Iterator["Item"]:
@@ -108,10 +122,10 @@ class Course(Base):
         Yields:
             Item: Cada uno de los items del curso.
         """
-        logger.debug(f"Iterando sobre los items del curso: {self.title}")
+        logger.info(f"Iterando sobre los items del curso")
         for section in self.sections:
             for item in section.items:
-                logger.debug(
+                logger.info(
                     f"Yielding item: {item.taks_id} de la sección: {section.index} del curso: {self.title}"
                 )
                 yield item
