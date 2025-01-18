@@ -218,6 +218,7 @@ def get_items(root: "HtmlElement") -> list[dict]:
 
 
 def download_item(item: "Item", folder_output: Path):
+    logger.info(f"Descargando Item: {item.index}-{item.title}")
     if isinstance(folder_output, str):
         folder_output = Path(folder_output)
 
@@ -227,25 +228,23 @@ def download_item(item: "Item", folder_output: Path):
     section_path = curse_path / f"{section.index}-{section.title_slug}"
 
     item_path = section_path / f"{item.index}-{item.title_slug}"
-    content = item.get_content()
     item_path.parent.mkdir(parents=True, exist_ok=True)
     if item.is_video:
         output = item_path.with_suffix(".mp4")
         if not output.exists():
+            content = item.get_content()
             download_drr = content["videos"]["hd"]["mp4"]
             response = item._make_request(download_drr)
-
             output.write_bytes(response.content)
-            sleep_progress(random.randint(15, 35))
             return True
         else:
-            logger.info(f"Video {item_path} ya descargado")
+            logger.info(f"El video del Item ya ha sido descargado")
     else:
         output = item_path.with_suffix(".md")
         if not output.exists():
+            content = item.get_content()
             output.write_text(content["content"])
-            sleep_progress(random.randint(15, 10))
             return True
         else:
-            logger.info(f"Archivo {item_path} ya descargado")
+            logger.info(f"El archivode del Item ya ha sido descargado")
     return False

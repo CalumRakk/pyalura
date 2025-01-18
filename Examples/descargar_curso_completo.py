@@ -7,5 +7,7 @@ curso = Course(url)
 folder = "Descargas"
 for section in curso.sections:
     for item in section.items:
-        download_item(item, folder)
-        sleep_progress(5)
+        resultado = download_item(item, folder)
+        if resultado:
+            sleep_progress(25)
+    sleep_progress(5)

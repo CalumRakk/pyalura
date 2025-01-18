@@ -67,7 +67,7 @@ class Item(Base):
                 *   `raw_html`: El HTML original del item.
                 *   `choice`: Un objeto Choice con las opciones de respuesta (si es una tarea).
         """
-        logger.info(f"Obteniendo contenido del item: {self.title} ({self.url})")
+        logger.info(f"Solicitando el contenido del item")
         if self._should_wait_for_request():
             self._wait_for_request()
 
@@ -91,7 +91,7 @@ class Item(Base):
                 f"Obtenida la información de las respuestas para el item: {self.title}"
             )
 
-        logger.debug(f"Contenido del item: {self.title} obtenido con éxito")
+        logger.info(f"Contenido obtenido exitosamente.")
         return {
             "videos": videos,
             "content": item_content,
