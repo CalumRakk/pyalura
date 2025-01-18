@@ -11,16 +11,10 @@ import re
 
 
 def sleep_progress(seconds):
-    minutes = int(timedelta(seconds=seconds).total_seconds() // 60)
-
-    logger.info(f"Esperando {minutes} minutos antes de continuar...")
-    count = 0
     for i in range(int(seconds), 0, -1):
+        logger.info(f"Esperando {i} segundos antes de continuar...")
         time.sleep(1)
-        count += 1
-        if count % 60 == 0:
-            minutes -= 1
-            logger.info(f"Esperando {minutes} minutos antes de continuar...")
+    logger.info("Continuando...")
 
 
 def sanitize_filename(filename):

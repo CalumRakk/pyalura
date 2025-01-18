@@ -132,7 +132,7 @@ class Item(Base):
         logger.debug(
             f"Esperando {randint} segundos antes de realizar la petición al servidor para el item: {self.title}"
         )
-        utils.sleep_program(randint)
+        utils.sleep_progress(randint)
         self.section.course.last_item_get_content_time = datetime.now()
 
     def _is_video_expired(self, video_url: str) -> bool:
