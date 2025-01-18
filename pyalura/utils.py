@@ -116,10 +116,28 @@ class ArticleType(enum.Enum):
     HQ_EXPLANATION = 8
     CHALLENGE = 9
     LINK_SUBMIT = 10
+    PRACTICE_CLASS_CONTENT = 11
 
     @property
     def is_choice(self):
-        return self in [ArticleType.SINGLE_CHOICE, ArticleType.MULTIPLE_CHOICE]
+        return self in [
+            ArticleType.SINGLE_CHOICE,
+            ArticleType.MULTIPLE_CHOICE,
+            ArticleType.PRACTICE_CLASS_CONTENT,
+        ]
+
+    @property
+    def is_document(self):
+        return self in [
+            ArticleType.COMPLEMENTARY_INFORMATION,
+            ArticleType.SETUP_EXPLANATION,
+            ArticleType.HQ_EXPLANATION,
+            ArticleType.SETUP_EXPLANATION,
+            ArticleType.HQ_EXPLANATION,
+            ArticleType.WHAT_WE_LEARNED,
+            ArticleType.COMPLEMENTARY_INFORMATION,
+            ArticleType.DO_AFTER_ME,
+        ]
 
 
 def get_course_sections(root: "HtmlElement"):

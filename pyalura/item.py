@@ -232,12 +232,13 @@ class Item(Base):
         Para videos, realiza una petición a la API para marcar el video como visto.
         Para tareas, obtiene las respuestas correctas y las envía al backend.
         """
-        if self.type == ArticleType.LINK_SUBMIT and not self.is_marked_as_seen:
+        if self.is_marked_as_seen:
             logger.info(
-                f"El articulo {self.url} no se puede marcar como visto. Es un formulario para enviar un link"
+                f"El item: {self.title} ya fue visto, no se puede marcar de nuevo"
             )
-            return
-        elif self.is_video and not self.is_marked_as_seen:
+            return False
+
+        if self.is_video:
             logger.info(f"Marcando el video como visto: {self.title} ({self.url})")
             self._make_request(self.url)
 
@@ -251,13 +252,37 @@ class Item(Base):
             if response.reason == "OK":
                 self.is_marked_as_seen = True
                 logger.info(f"Video: {self.title} marcado como visto con exito")
-        elif not self.is_choice and not self.is_marked_as_seen:
-            logging.info("Marcando tarea como vista")
+                return True
+        elif self.is_choice:
+            logger.info(
+                f'Se intento marcar como visto un Item choice, use "resolve_choice" en vez de "mark_as_watched" para el item: {self.url}'
+            )
+            return False
+            l
+        else:
+            logger.info(f"Marcando el Item como visto: {self.title} ({self.url})")
             self._make_request(self.url)
             self.is_marked_as_seen = True
+            return True
+        return False
 
     def resolve_choice(self):
-        pass
+        if self.is_marked_as_seen is True:
+            logger.info(
+                f"El item: {self.title} ya fue resuelto, no se puede resolver de nuevo"
+            )
+            return False
+
+        if self.is_choice:
+            logger.info(f"Resolviendo la pregunta: {self.title} ({self.url})")
+            content = self.get_content()
+            choice: Choice = content["choice"]
+            _ = [answer.select() for answer in choice.answers if answer.is_correct]
+            choice.send_selected_answers()
+            self.is_marked_as_seen = True
+            return True
+        logger.info(f"El item: {self.title} no es una pregunta")
+        return False
 
     @property
     def taks_id(self) -> str:
@@ -294,3 +319,15 @@ class Item(Base):
         is_choice = self.type.is_choice
         logger.debug(f"Validando si el item: {self.title} es choice: {is_choice}")
         return is_choice
+
+    @property
+    def is_document(self) -> bool:
+        """
+        Verifica si el elemento es de tipo documento.
+
+        Returns:
+            bool: True si el elemento es un documento, False en caso contrario.
+        """
+        is_document = self.type == utils.ArticleType.is_document
+        logger.debug(f"Validando si el item: {self.title} es documento: {is_document}")
+        return is_document
