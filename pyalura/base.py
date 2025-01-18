@@ -21,7 +21,7 @@ class Base:
         return self.cookie_manager.headers
 
     def _make_request(self, url, method="GET", **kwargs):
-        logger.info(f"Request: {url}, method: {method}, kwargs: {kwargs}")
+        logger.debug(f"Request: {url}, method: {method}, kwargs: {kwargs}")
 
         if method.upper() == "GET":
             method = requests.get
@@ -33,7 +33,7 @@ class Base:
             raise NotImplementedError
 
         response = method(url, cookies=self.cookies, headers=self.headers, **kwargs)
-        logger.info(f"Response: {response.status_code}")
+        logger.debug(f"Response: {response.status_code}")
         response.raise_for_status()
         return response
 

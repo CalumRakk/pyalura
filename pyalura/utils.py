@@ -16,10 +16,11 @@ import re
 
 
 def sleep_progress(seconds):
+    logger.info(f"Esperando {seconds} segundos antes de continuar...")
     for i in range(int(seconds), 0, -1):
-        logger.info(f"Esperando {i} segundos antes de continuar...")
         time.sleep(1)
-    logger.info("Continuando...")
+        logger.debug(f"Esperando {i} segundos antes de continuar...")
+    logger.debug("Continuando...")
 
 
 def sanitize_filename(filename):

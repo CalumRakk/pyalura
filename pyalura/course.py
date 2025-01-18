@@ -35,14 +35,14 @@ class Course(Base):
         super().__init__()
 
     def __get_course_url_button_access(self) -> bool:
-        logger.info("Obteniendo la URL del boton principal para ver el curso")
+        logger.debug("Obteniendo la URL del boton principal para ver el curso")
         root_base = self._fetch_root(self.url_base)
         url_relative = root_base.find(
             ".//section[@class='course']//div[@class='container']/a"
         ).get("href")
         url_botton_access = urljoin(HOST, url_relative)
         setattr(self, "_course_url_button_access", url_botton_access)
-        logger.info(f"URL obtenida: {url_botton_access}")
+        logger.debug(f"URL obtenida: {url_botton_access}")
         return url_botton_access
 
     @property
@@ -80,7 +80,7 @@ class Course(Base):
             course_sections = [
                 Section(**i, course=self) for i in utils.get_course_sections(root)
             ]
-            logger.info(
+            logger.debug(
                 f"Secciones del curso: {len(course_sections)}, primer elemento: {course_sections[0].__dict__}"
             )
             setattr(self, "_course_sections", course_sections)
@@ -112,7 +112,7 @@ class Course(Base):
             raise TypeError("El valor debe ser un objeto datetime o None")
 
         setattr(self, "_last_item_get_content_time", value)
-        logger.info(f"Estableciendo last_item_get_content_time a: {value}")
+        logger.debug(f"Estableciendo last_item_get_content_time a: {value}")
         return getattr(self, "_last_item_get_content_time")
 
     def iter_items(self) -> Iterator["Item"]:
