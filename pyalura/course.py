@@ -37,6 +37,13 @@ class Course(Base):
     def __get_course_url_button_access(self) -> bool:
         logger.debug("Obteniendo la URL del boton principal para ver el curso")
         root_base = self._fetch_root(self.url_base)
+        # la presencia de este elemento indica que el usuario esta logueado
+        element_profile = root_base.find(".//nav[@id='profileList']")
+        if element_profile is None:
+            msg_error = "No se esta logueado, confirma que las cookies sean correctas"
+            logger.error(msg_error)
+            raise Exception(msg_error)
+
         url_relative = root_base.find(
             ".//section[@class='course']//div[@class='container']/a"
         ).get("href")
