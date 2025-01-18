@@ -3,7 +3,12 @@ from pathlib import Path
 from urllib.parse import urljoin, urlparse
 from datetime import timedelta
 import time
+import random
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyalura.item import Item
 
 
 from lxml.html import HtmlElement
@@ -209,3 +214,37 @@ def get_items(root: "HtmlElement") -> list[dict]:
         )
 
     return articulos
+
+
+def download_item(item: "Item", folder_output: Path):
+    if isinstance(folder_output, str):
+        folder_output = Path(folder_output)
+
+    curso = item.section.course
+    section = item.section
+    curse_path = Path(folder_output) / curso.title_slug
+    section_path = curse_path / f"{section.index}-{section.title_slug}"
+
+    item_path = section_path / f"{item.index}-{item.title_slug}"
+    content = item.get_content()
+    item_path.parent.mkdir(parents=True, exist_ok=True)
+    if item.is_video:
+        output = item_path.with_suffix(".mp4")
+        if not output.exists():
+            download_drr = content["videos"]["hd"]["mp4"]
+            response = item._make_request(download_drr)
+
+            output.write_bytes(response.content)
+            sleep_progress(random.randint(15, 35))
+            return True
+        else:
+            logger.info(f"Video {item_path} ya descargado")
+    else:
+        output = item_path.with_suffix(".md")
+        if not output.exists():
+            output.write_text(content["content"])
+            sleep_progress(random.randint(15, 10))
+            return True
+        else:
+            logger.info(f"Archivo {item_path} ya descargado")
+    return False
