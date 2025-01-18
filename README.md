@@ -1,22 +1,49 @@
 # PyAlura
 
-Esta es una API no oficial para interactuar con la plataforma de Alura
+Una API no oficial de Python para interactuar con la plataforma Alura.
 
 ## Instalación
 
-```sh
+```bash
 pip install git+https://github.com/CalumRakk/pyalura
 ```
 
-## Guía de inicio rápido
+## Inicio rápido
 
-Para comenzar a utilizar esta API, siga las instrucciones a continuación.
+1. **Obtén tus cookies de Alura:** Usa una extensión de navegador como [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) para exportar tus cookies a un archivo `cookies.txt`.
+2. **Guarda el archivo `cookies.txt`:** Asegúrate de que el archivo `cookies.txt` esté en el mismo directorio donde ejecutarás tu script de Python.
+3. **Crea una instancia de la clase `Course`:**
 
-Lo primero es obtener la Cookies de Alura. Puedes utilizar cualquier extension del navegador como [Get cookies.txt LOCALLY
-](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) u otra. Una vez que hayas instalado la extensión, sigue estos pasos:
+   ```python
+   from pyalura import Course
 
-1. Dirígete a [Alura](https://app.aluracursos.com/)
-2. Haz clic en el icono de la extensión en la barra del navegador.
-3. Selecciona la opción de exportar para obtener las cookies.
+   url_del_curso = "https://app.aluracursos.com/curso/..."
+   curso = Course(url_del_curso)
+   ```
 
-....
+4. **Accede a las secciones e items del curso:**
+   ```python
+   for seccion in curso.sections:
+       for item in seccion.items:
+           print(f"Sección: {seccion.title}, Item: {item.title}")
+           contenido = item.get_content()
+           # Procesa el contenido del item (videos, texto, etc.)
+   ```
+
+## Ejemplos
+
+Descarga un curso completo:
+
+```python
+from pyalura import Course
+from pyalura.utils import sleep_progress, download_item
+
+url = "https://app.aluracursos.com/course/..."
+curso = Course(url)
+carpeta = "Descargas"
+for seccion in curso.sections:
+    for item in seccion.items:
+        download_item(item, carpeta)
+        sleep_progress(25)  # Pausa para evitar sobrecargar la API
+    sleep_progress(5)
+```
