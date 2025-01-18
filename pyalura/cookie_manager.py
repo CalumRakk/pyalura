@@ -48,6 +48,12 @@ class CookieManager:
                     "expiration": int(expiration) if expiration.isdigit() else None,
                     "value": value,
                 }
+
+            return {
+                "SESSION": cookies["SESSION"]["value"],
+                "caelum.login.token": cookies["caelum.login.token"]["value"],
+                "alura.userId": cookies["alura.userId"]["value"],
+            }
         elif format_type == "json":
             cookies = json.loads(content)
 
