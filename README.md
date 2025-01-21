@@ -47,3 +47,18 @@ for seccion in curso.sections:
         sleep_progress(25)  # Pausa para evitar sobrecargar la API
     sleep_progress(5)
 ```
+
+**Como responder y enviar una actividad especifica de un curso**
+
+```python
+from pyalura import Course
+
+url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/task/86025"
+item = Course.get_item(url) # Instancia una actividad especificada en la url
+content = item.get_content() # Obtiene el contenido de la pregunta
+choice = content["choice"] # Obtiene la pregunta
+
+print(content["content"])
+answer= choice.answers[1].select() # Marca la respuesta 1 como correcta.
+choice.send_answers(answer) # Envia la respuesta seleccionada al backend
+```

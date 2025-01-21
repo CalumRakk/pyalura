@@ -8,6 +8,9 @@ from pyalura.item import Item
 from pyalura.base import Base
 from pyalura import utils
 from pyalura.utils import HOST
+from pyalura.cookie_manager import CookieManager
+import requests
+from lxml import html
 
 # Configuración del logger para este módulo
 logger = logging.getLogger(__name__)
@@ -129,3 +132,43 @@ class Course(Base):
                     f"Yielding item: {item.taks_id} de la sección: {section.index} del curso: {self.title}"
                 )
                 yield item
+
+    @classmethod
+    def get_item(cls, item_url: str) -> "Item":
+        """
+        Instancia un objeto Item a partir de una URL.
+
+        Args:
+            item_url (str): La URL del item que se desea instanciar.
+
+        Returns:
+            Item: Una instancia del objeto Item correspondiente a la URL.
+
+        Raises:
+            ValueError: Si la URL no es válida o no se puede instanciar el item.
+        """
+        logger.info(f"Intentando instanciar un Item desde la URL: {item_url}")
+
+        try:
+            # Realizar una solicitud a la URL del item
+            icookies = CookieManager()
+            cookies = icookies.get_cookies()
+            response = requests.get(item_url, cookies=cookies, headers=icookies.headers)
+            root = html.fromstring(response.text)
+
+            if response.status_code != 200:
+                logger.warning("La solicitud no fue exitosa")
+            select_selected = root.find(
+                ".//select[@class='task-menu-sections-select']//option[@selected]"
+            ).text
+            curse = Course(item_url)
+            section = Section(select_selected, item_url, curse)
+            item_data = [i for i in utils.get_items(root) if i["url"] == item_url][0]
+            item = Item(**item_data, section=section)
+            return item
+
+        except Exception as e:
+            logger.error(f"Error al instanciar el Item desde la URL: {e}")
+            raise ValueError(
+                f"No se pudo instanciar el item desde la URL proporcionada: {e}"
+            )
