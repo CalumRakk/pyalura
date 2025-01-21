@@ -1,7 +1,7 @@
 import enum
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
-from datetime import timedelta
+from typing import Union
 import time
 import random
 import logging
@@ -235,11 +235,46 @@ def get_items(root: "HtmlElement") -> list[dict]:
     return articulos
 
 
-def download_item(item: "Item", folder_output: Path):
+def download_item(item: "Item", folder_output: Path) -> dict:
+    """
+    Descarga un item en la carpeta especificada.
+
+    Args:
+        item (Item): El objeto Item a descargar.
+        folder_output (Path): La ruta de la carpeta donde se guardará el item.
+
+    Returns:
+        dict: Un diccionario con el resultado de la descarga. Contiene las claves:
+            - "exists" (bool): Indica si el item ya existía.
+            - "is_downloaded" (bool): Indica si el item fue descargado.
+            - "output" (Path): La ruta del archivo descargado.
+            - "error" (None): Reservado para futuros errores.
+
+    Ejemplo:
+        result = download_item(item, Path("/ruta/a/carpeta"))
+        print(result)
+        # Salida esperada:
+        # {
+        #     "exists": False,
+        #     "is_downloaded": True,
+        #     "output": Path("/ruta/a/carpeta/curso/1-seccion/1-item.mp4"),
+        #     "error": None,
+        #     "course_folder": Path("/ruta/a/carpeta/curso"),
+        #     "section_folder": Path("/ruta/a/carpeta/curso/1-seccion")
+        # }
+    """
     logger.info(f"Descargando Item: {item.index}-{item.title}")
     if isinstance(folder_output, str):
         folder_output = Path(folder_output)
 
+    result = {
+        "exists": False,
+        "is_downloaded": False,
+        "output": None,
+        "error": None,
+        "curse_path": None,
+        "section_path": None,
+    }
     curso = item.section.course
     section = item.section
     curse_path = Path(folder_output) / curso.title_slug
@@ -247,6 +282,9 @@ def download_item(item: "Item", folder_output: Path):
 
     item_path = section_path / f"{item.index}-{item.title_slug}"
     item_path.parent.mkdir(parents=True, exist_ok=True)
+    result["output"] = item_path
+    result["curse_path"] = curse_path
+    result["section_path"] = section_path
     if item.is_video:
         output = item_path.with_suffix(".mp4")
         if not output.exists():
@@ -254,15 +292,19 @@ def download_item(item: "Item", folder_output: Path):
             download_drr = content["videos"]["hd"]["mp4"]
             response = item._make_request(download_drr)
             output.write_bytes(response.content)
-            return True
+            result["is_downloaded"] = True
+            return result
         else:
+            result["exists"] = True
             logger.info(f"El video del Item ya ha sido descargado")
     else:
         output = item_path.with_suffix(".md")
         if not output.exists():
             content = item.get_content()
             output.write_text(content["content"])
-            return True
+            result["is_downloaded"] = True
+            return result
         else:
+            result["exists"] = True
             logger.info(f"El archivode del Item ya ha sido descargado")
-    return False
+    return result
