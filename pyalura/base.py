@@ -4,6 +4,9 @@ from lxml import html
 import logging
 from pyalura.cookie_manager import CookieManager
 import unidecode
+import re
+
+caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1F]')
 
 logger = logging.getLogger(__name__)
 
@@ -45,4 +48,5 @@ class Base:
     def title_slug(self):
         slug = unidecode.unidecode(self.title.strip())
         slug_lower = slug.lower().replace(" ", "-")
-        return sanitize_filename(slug_lower)
+        slut_lower_sin_caracteres_invalidos = caracteres_invalidos.sub("_", slug_lower)
+        return sanitize_filename(slut_lower_sin_caracteres_invalidos)

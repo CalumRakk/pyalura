@@ -46,6 +46,7 @@ class Answer(Base):
         """Marca la respuesta como seleccionada."""
         self.is_selected = True
         logging.info(f"Respuesta con id: {self.id} seleccionada.")
+        return self
 
     def unselect(self):
         """Marca la respuesta como no seleccionada."""
