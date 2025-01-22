@@ -76,6 +76,11 @@ def extract_base_url(url):
     Ejemplo:
     https://app.aluracursos.com/course/...est-java/task/83409 -> https://app.aluracursos.com/course/spring-boot-3-desarrollar-api-rest-java
     """
+    logger.debug(f"Extrayendo URL base de: {url}")
+
+    if type(url) != str:
+        raise TypeError("Se esperaba como url string")
+
     urlparsed = urlparse(url)
     url_parts = Path(urlparsed.path).parts
 
@@ -117,6 +122,7 @@ class ArticleType(enum.Enum):
     CHALLENGE = 9
     LINK_SUBMIT = 10
     PRACTICE_CLASS_CONTENT = 11
+    TEXT_CONTENT = 12
 
     @property
     def is_choice(self):
@@ -137,6 +143,7 @@ class ArticleType(enum.Enum):
             ArticleType.WHAT_WE_LEARNED,
             ArticleType.COMPLEMENTARY_INFORMATION,
             ArticleType.DO_AFTER_ME,
+            ArticleType.TEXT_CONTENT,
         ]
 
 
@@ -301,7 +308,7 @@ def download_item(item: "Item", folder_output: Path) -> dict:
         output = item_path.with_suffix(".md")
         if not output.exists():
             content = item.get_content()
-            output.write_text(content["content"])
+            output.write_text(content["content"], encoding="utf-8")
             result["is_downloaded"] = True
             return result
         else:
