@@ -1,12 +1,9 @@
 import requests
-from pyalura.utils import sanitize_filename
 from lxml import html
 import logging
 from pyalura.cookie_manager import CookieManager
-import unidecode
-import re
+from pyalura.utils import string_to_slug
 
-caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1F]')
 
 logger = logging.getLogger(__name__)
 
@@ -46,7 +43,4 @@ class Base:
 
     @property
     def title_slug(self):
-        slug = unidecode.unidecode(self.title.strip())
-        slug_lower = slug.lower().replace(" ", "-")
-        slut_lower_sin_caracteres_invalidos = caracteres_invalidos.sub("_", slug_lower)
-        return sanitize_filename(slut_lower_sin_caracteres_invalidos)
+        return string_to_slug(self.title)

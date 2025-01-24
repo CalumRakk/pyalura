@@ -6,6 +6,7 @@ import time
 import random
 import logging
 from typing import TYPE_CHECKING
+import unidecode
 
 if TYPE_CHECKING:
     from pyalura.item import Item
@@ -14,6 +15,15 @@ if TYPE_CHECKING:
 from lxml.html import HtmlElement
 import re
 
+caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1F]')
+
+
+def string_to_slug(string):
+    slug = unidecode.unidecode(string.strip())
+    slug_lower = slug.lower().replace(" ", "-")
+    slut_lower_sin_caracteres_invalidos = caracteres_invalidos.sub("_", slug_lower)
+    return slut_lower_sin_caracteres_invalidos.rstrip(" .")
+
 
 def sleep_progress(seconds):
     logger.info(f"Esperando {seconds} segundos antes de continuar...")
@@ -21,13 +31,6 @@ def sleep_progress(seconds):
         time.sleep(1)
         logger.debug(f"Esperando {i} segundos antes de continuar...")
     logger.debug("Continuando...")
-
-
-def sanitize_filename(filename):
-    pattern = r'[<>:"/\\|?*\x00-\x1F]'
-    sanitized = re.sub(pattern, "", filename)
-    sanitized = sanitized.rstrip(" .")
-    return sanitized
 
 
 logging.basicConfig(

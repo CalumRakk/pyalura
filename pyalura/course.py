@@ -11,6 +11,7 @@ from pyalura.utils import HOST
 from pyalura.cookie_manager import CookieManager
 import requests
 from lxml import html
+from pyalura.utils import string_to_slug
 
 # Configuración del logger para este módulo
 logger = logging.getLogger(__name__)
@@ -39,13 +40,7 @@ class Course(Base):
 
     def __get_course_url_button_access(self) -> bool:
         logger.debug("Obteniendo la URL del boton principal para ver el curso")
-        root_base = self._fetch_root(self.url_base)
-        # la presencia de este elemento indica que el usuario esta logueado
-        element_profile = root_base.find(".//nav[@id='profileList']")
-        if element_profile is None:
-            msg_error = "No se esta logueado, confirma que las cookies sean correctas"
-            logger.error(msg_error)
-            raise Exception(msg_error)
+        root_base = self._get_course_page(self.url)["root"]
 
         url_relative = root_base.find(
             ".//section[@class='course']//div[@class='container']/a"
@@ -54,6 +49,30 @@ class Course(Base):
         setattr(self, "_course_url_button_access", url_botton_access)
         logger.debug(f"URL obtenida: {url_botton_access}")
         return url_botton_access
+
+    def _get_course_page(self, url: str) -> dict:
+        if not hasattr(self, "__course_page"):
+            logger.debug("Obteniendo la página del curso")
+            response = self._make_request(url)
+            root = html.fromstring(response.text)
+            # la presencia de este elemento indica que el usuario esta logueado
+            element_profile = root.find(".//nav[@id='profileList']")
+            if element_profile is None:
+                msg_error = (
+                    "No se esta logueado, confirma que las cookies sean correctas"
+                )
+                logger.error(msg_error)
+                raise Exception(msg_error)
+            setattr(self, "__course_page", {"root": root, "response": response})
+        return getattr(self, "__course_page")
+
+    @property
+    def subcategory(self) -> str:
+        root = self._get_course_page(self.url)["root"]
+        subcategory = root.find(
+            ".//a[@class='course-header-banner-breadcrumb__subcategory']"
+        ).text.strip()
+        return string_to_slug(subcategory)
 
     @property
     def sections(self) -> list["Section"]:
