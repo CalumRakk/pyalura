@@ -36,6 +36,8 @@ class CookieManager:
             for line in content.split("\n"):
                 if line.startswith("#") or not line.strip():
                     continue
+                elif not "aluracursos.com" in line:
+                    continue
                 fields = line.strip().split("\t")
                 if len(fields) != 7:
                     raise ValueError(f"Línea malformada: {line}")
