@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="pyalura",
@@ -7,11 +7,5 @@ setup(
     author="Leo",
     author_email="leocasti@gmail.com",
     packages=find_packages(),
-    install_requires=[
-        "lxml",
-        "requests",
-        "html2text",
-        "Unidecode",
-        "streamlit",
-    ],
+    install_requires=["lxml", "requests", "html2text", "Unidecode"],
 )

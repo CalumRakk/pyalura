@@ -13,3 +13,4 @@ pruebas/
 .venv/
 script.py
 *.log
+script2.py
