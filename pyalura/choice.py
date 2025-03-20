@@ -118,7 +118,7 @@ class Choice(Base):
 
         section_index = self.parent.section.index.lstrip("0")
         choice_type = "singlechoice" if self.is_single_choice else "multiplechoice"
-        course_url = self.parent.section.course.base_course_url
+        course_url = self.parent.section.course.url_base
         url = f"{course_url}/section/{section_index}/{choice_type}/answer"
 
         logging.debug(f"URL para enviar las respuestas: {url}, data: {json_data}")

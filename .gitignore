@@ -3,7 +3,7 @@
 *.bin
 *.egg-info
 
-scripts
+scripts/
 __pycache__
 log.txt
 Descargas/
