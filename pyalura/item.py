@@ -1,19 +1,22 @@
 import logging
-from datetime import datetime, timedelta
-from pyalura.utils import ArticleType
-from pyalura import utils
-from pathlib import Path
-import html2text
-from .base import Base
-from lxml import html
-from urllib.parse import urlparse, parse_qs, urljoin
 import random
+from datetime import datetime, timedelta
+from pathlib import Path
 from typing import TYPE_CHECKING, Union
+from urllib.parse import parse_qs, urljoin, urlparse
 
-from pyalura.item_utils import get_answers
+import html2text
+from lxml import html
+
+from pyalura import utils
 from pyalura.choice import Answer, Choice
+from pyalura.item_utils import get_answers
+from pyalura.utils import ArticleType
+
+from .base import Base
 
 if TYPE_CHECKING:
+    from pyalura.course import Course
     from pyalura.section import Section
 
 logger = logging.getLogger(__name__)
@@ -52,6 +55,10 @@ class Item(Base):
         self.is_marked_as_seen = is_marked_as_seen
         super().__init__()
         logger.debug(f"Item creado: {self.title} ({self.url})")
+
+    @property
+    def course(self) -> "Course":
+        return self.section.course
 
     def get_content(self) -> dict:
         """

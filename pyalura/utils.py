@@ -1,21 +1,22 @@
 import enum
-from pathlib import Path
-from urllib.parse import urljoin, urlparse
-from typing import Union
-import time
-import random
+import json
 import logging
-from typing import TYPE_CHECKING
+import random
+import time
+from pathlib import Path
+from typing import TYPE_CHECKING, Union
+from urllib.parse import urljoin, urlparse
+
 import unidecode
 
 if TYPE_CHECKING:
     from pyalura.item import Item
 
-
-from lxml.html import HtmlElement
 import re
 
-caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1F]')
+from lxml.html import HtmlElement
+
+caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1f]')
 
 
 def string_to_slug(string):
@@ -245,76 +246,64 @@ def get_items(root: "HtmlElement") -> list[dict]:
     return articulos
 
 
-def download_item(item: "Item", folder_output: Path) -> dict:
-    """
-    Descarga un item en la carpeta especificada.
+def download_item(item: "Item", folder_output: Path, track_downloads=False):
+    
+    logger.info(f"Procesando Item: {item.index} - {item.title}")
+    folder_output = (
+        Path(folder_output) if isinstance(folder_output, str) else folder_output
+    )
 
-    Args:
-        item (Item): El objeto Item a descargar.
-        folder_output (Path): La ruta de la carpeta donde se guardará el item.
+    track_downloads_path = Path("track_downloads.json")
+    downloaded_items = set()
 
-    Returns:
-        dict: Un diccionario con el resultado de la descarga. Contiene las claves:
-            - "exists" (bool): Indica si el item ya existía.
-            - "is_downloaded" (bool): Indica si el item fue descargado.
-            - "output" (Path): La ruta del archivo descargado.
-            - "error" (None): Reservado para futuros errores.
+    if track_downloads and track_downloads_path.exists():
+        try:
+            downloaded_items = set(json.loads(track_downloads_path.read_text()))
+        except json.JSONDecodeError:
+            logger.warning(
+                "El archivo track_downloads.json está corrupto. Se usará uno nuevo."
+            )
 
-    Ejemplo:
-        result = download_item(item, Path("/ruta/a/carpeta"))
-        print(result)
-        # Salida esperada:
-        # {
-        #     "exists": False,
-        #     "is_downloaded": True,
-        #     "output": Path("/ruta/a/carpeta/curso/1-seccion/1-item.mp4"),
-        #     "error": None,
-        #     "course_folder": Path("/ruta/a/carpeta/curso"),
-        #     "section_folder": Path("/ruta/a/carpeta/curso/1-seccion")
-        # }
-    """
-    logger.info(f"Descargando Item: {item.index}-{item.title}")
-    if isinstance(folder_output, str):
-        folder_output = Path(folder_output)
+    if track_downloads and item.url in downloaded_items:
+        logger.info(f"El item ya ha sido descargado según el archivo de seguimiento.")
+        return
 
-    result = {
-        "exists": False,
-        "is_downloaded": False,
-        "output": None,
-        "error": None,
-        "curse_path": None,
-        "section_path": None,
-    }
-    curso = item.section.course
-    section = item.section
-    curse_path = Path(folder_output) / curso.title_slug
-    section_path = curse_path / f"{section.index}-{section.title_slug}"
-
+    # Construcción de rutas
+    course_path = folder_output / item.course.subcategory / item.course.title_slug
+    section_path = course_path / f"{item.section.index}-{item.section.title_slug}"
     item_path = section_path / f"{item.index}-{item.title_slug}"
+
+    # Crear directorios antes de definir la salida
     item_path.parent.mkdir(parents=True, exist_ok=True)
-    result["output"] = item_path
-    result["curse_path"] = curse_path
-    result["section_path"] = section_path
+
+    if item_path.exists():
+        logger.info("El item ya ha sido descargado.")
+        if track_downloads:
+            downloaded_items.add(item.url)
+            track_downloads_path.write_text(
+                json.dumps(list(downloaded_items), indent=2)
+            )
+        return
+
+    # Descarga del contenido
+    content = item.get_content()
+
     if item.is_video:
         output = item_path.with_suffix(".mp4")
-        if not output.exists():
-            content = item.get_content()
-            download_drr = content["videos"]["hd"]["mp4"]
-            response = item._make_request(download_drr)
-            output.write_bytes(response.content)
-            result["is_downloaded"] = True
-            return result
-        else:
-            result["exists"] = True
-            logger.info(f"El video del Item ya ha sido descargado")
+        download_url = content["videos"]["hd"]["mp4"]
+
+        response = item._make_request(download_url)
+
+        if response.status_code != 200:
+            logger.error(f"Error al descargar {item.title}: {response.status_code}")
+            return
+
+        output.write_bytes(response.content)
     else:
         output = item_path.with_suffix(".md")
-        if not output.exists():
-            content = item.get_content()
-            output.write_text(content["content"], encoding="utf-8")
-            result["is_downloaded"] = True
-            return result
-        else:
-            result["exists"] = True
-            logger.info(f"El archivode del Item ya ha sido descargado")
-    return result
+        output.write_text(content["content"], encoding="utf-8")
+
+    sleep_progress(random.randint(5, 15))
+    if track_downloads:
+        downloaded_items.add(item.url)
+        track_downloads_path.write_text(json.dumps(list(downloaded_items), indent=2))

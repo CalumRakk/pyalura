@@ -17,7 +17,7 @@ pip install git+https://github.com/CalumRakk/pyalura
    ```python
    from pyalura import Course
 
-   url_del_curso = "https://app.aluracursos.com/curso/..."
+   url_del_curso = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
    curso = Course(url_del_curso)
    ```
 
@@ -30,9 +30,24 @@ pip install git+https://github.com/CalumRakk/pyalura
            # Procesa el contenido del item (videos, texto, etc.)
    ```
 
+5. **Código completo**
+
+    ```python
+    from pyalura import Course
+
+    url_del_curso = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
+    curso = Course(url_del_curso)
+    for seccion in curso.sections:
+       for item in seccion.items:
+           print(f"Sección: {seccion.title}, Item: {item.title}")
+           contenido = item.get_content()
+    ```
+
+
 ## Ejemplos
 
-Descarga un curso completo:
+### Descarga un curso completo:
+
 
 ```python
 from pyalura import Course
@@ -48,7 +63,7 @@ for seccion in curso.sections:
     sleep_progress(5)
 ```
 
-**Como responder y enviar una actividad especifica de un curso**
+#### **Como responder y enviar una actividad especifica de un curso**
 
 ```python
 from pyalura import Course
