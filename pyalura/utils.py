@@ -17,6 +17,7 @@ import re
 from lxml.html import HtmlElement
 
 caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1f]')
+TRACK_DOWNLOADS_PATH = Path("track_downloads.json")
 
 
 def string_to_slug(string):
@@ -246,28 +247,10 @@ def get_items(root: "HtmlElement") -> list[dict]:
     return articulos
 
 
-def download_item(item: "Item", folder_output: Path, track_downloads=False):
-    
-    logger.info(f"Procesando Item: {item.index} - {item.title}")
+def _build_output_path(item: Item, folder_output: Union[str, Path]) -> Path:
     folder_output = (
         Path(folder_output) if isinstance(folder_output, str) else folder_output
     )
-
-    track_downloads_path = Path("track_downloads.json")
-    downloaded_items = set()
-
-    if track_downloads and track_downloads_path.exists():
-        try:
-            downloaded_items = set(json.loads(track_downloads_path.read_text()))
-        except json.JSONDecodeError:
-            logger.warning(
-                "El archivo track_downloads.json está corrupto. Se usará uno nuevo."
-            )
-
-    if track_downloads and item.url in downloaded_items:
-        logger.info(f"El item ya ha sido descargado según el archivo de seguimiento.")
-        return
-
     # Construcción de rutas
     course_path = folder_output / item.course.subcategory / item.course.title_slug
     section_path = course_path / f"{item.section.index}-{item.section.title_slug}"
@@ -275,21 +258,18 @@ def download_item(item: "Item", folder_output: Path, track_downloads=False):
 
     # Crear directorios antes de definir la salida
     item_path.parent.mkdir(parents=True, exist_ok=True)
+    return item_path
 
-    if item_path.exists():
+
+def _download_item(item, output: Path) -> bool:
+    if output.exists():
         logger.info("El item ya ha sido descargado.")
-        if track_downloads:
-            downloaded_items.add(item.url)
-            track_downloads_path.write_text(
-                json.dumps(list(downloaded_items), indent=2)
-            )
-        return
+        return False
 
     # Descarga del contenido
     content = item.get_content()
-
     if item.is_video:
-        output = item_path.with_suffix(".mp4")
+        output = output.with_suffix(".mp4")
         download_url = content["videos"]["hd"]["mp4"]
 
         response = item._make_request(download_url)
@@ -300,10 +280,14 @@ def download_item(item: "Item", folder_output: Path, track_downloads=False):
 
         output.write_bytes(response.content)
     else:
-        output = item_path.with_suffix(".md")
+        output = output.with_suffix(".md")
         output.write_text(content["content"], encoding="utf-8")
+    return True
 
-    sleep_progress(random.randint(5, 15))
-    if track_downloads:
-        downloaded_items.add(item.url)
-        track_downloads_path.write_text(json.dumps(list(downloaded_items), indent=2))
+
+def download_item(item: "Item", folder_output: Path):
+    logger.info(f"Procesando Item: {item.index} - {item.title}")
+    output = _build_output_path(item, folder_output)
+    is_downloaded = _download_item(item, output)
+    if is_downloaded:
+        sleep_progress(random.randint(5, 15))

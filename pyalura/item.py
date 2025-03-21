@@ -338,3 +338,12 @@ class Item(Base):
         is_document = self.type == utils.ArticleType.is_document
         logger.debug(f"Validando si el item: {self.title} es documento: {is_document}")
         return is_document
+
+    @property
+    def is_last_item(self) -> bool:
+        # Variables para detectar la posición actual del item en el curso
+        if hasattr(self, "_is_last_item") is False:
+            if self.section.is_last_section:
+                is_last_item = self.index == self.section.index_last_section
+                setattr(self, "_is_last_item", is_last_item)
+        return getattr(self, "_is_last_item")

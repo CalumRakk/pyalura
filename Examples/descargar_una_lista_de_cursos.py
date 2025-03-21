@@ -12,4 +12,4 @@ for url in URLs:
     course = Course(url)
     for section in course.sections:
         for item in section.items:
-            download_item(item, folder, track_downloads=True)
+            download_item(item, folder)

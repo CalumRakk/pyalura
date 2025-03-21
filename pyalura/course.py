@@ -1,17 +1,17 @@
 import logging
-from typing import Iterator, Union
 from datetime import datetime
+from typing import Iterator, Union
 from urllib.parse import urljoin
 
-from pyalura.section import Section
-from pyalura.item import Item
-from pyalura.base import Base
-from pyalura import utils
-from pyalura.utils import HOST
-from pyalura.cookie_manager import CookieManager
 import requests
 from lxml import html
-from pyalura.utils import string_to_slug
+
+from pyalura import utils
+from pyalura.base import Base
+from pyalura.cookie_manager import CookieManager
+from pyalura.item import Item
+from pyalura.section import Section
+from pyalura.utils import HOST, string_to_slug
 
 # Configuración del logger para este módulo
 logger = logging.getLogger(__name__)
@@ -198,3 +198,10 @@ class Course(Base):
             raise ValueError(
                 f"No se pudo instanciar el item desde la URL proporcionada: {e}"
             )
+
+    @property
+    def index_last_section(self) -> int:
+        if hasattr(self, "_is_last_section") is False:
+            index_last_section = len(self.sections) + 1
+            setattr(self, "_is_last_section", index_last_section)
+        return getattr(self, "_is_last_section")

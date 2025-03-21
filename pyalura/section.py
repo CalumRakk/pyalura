@@ -1,8 +1,8 @@
+from typing import TYPE_CHECKING
+
+from pyalura import utils
 from pyalura.base import Base
 from pyalura.item import Item
-from pyalura import utils
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from pyalura import Course
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class Section(Base):
     def __init__(self, name, url, course: "Course"):
         index, title = name.split(".", 1)
-        self.index = index
+        self.index = index  # indice de la sección, empieza en 1.
         self.title = title.strip()
         self.url = url
         self.course = course
@@ -24,3 +24,14 @@ class Section(Base):
             items = [Item(**i, section=self) for i in utils.get_items(root)]
             setattr(self, "_items", items)
         return getattr(self, "_items")
+
+    @property
+    def index_last_section(self) -> int:
+        return self.course.index_last_section
+
+    @property
+    def is_last_section(self) -> bool:
+        if hasattr(self, "_is_last_section") is False:
+            is_last_section = self.index == self.index_last_section
+            setattr(self, "_is_last_section", is_last_section)
+        return getattr(self, "_is_last_section")
