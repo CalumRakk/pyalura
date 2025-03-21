@@ -1,7 +1,8 @@
 import logging
 from typing import TYPE_CHECKING
-from pyalura.base import Base
+
 from pyalura import utils
+from pyalura.base import Base
 
 if TYPE_CHECKING:
     from pyalura.item import Item
@@ -18,11 +19,16 @@ class Answer(Base):
         text (str): Texto de la respuesta.
         is_correct (bool): Indica si la respuesta es correcta.
         is_selected (bool): Indica si la respuesta ha sido seleccionada por el usuario.
-        choice (Choice): Objeto Choice al que pertenece esta respuesta.
+        choice (Question): Objeto Question al que pertenece esta respuesta.
     """
 
     def __init__(
-        self, id: int, text: str, is_correct: bool, is_selected: bool, choice: "Choice"
+        self,
+        id: int,
+        text: str,
+        is_correct: bool,
+        is_selected: bool,
+        choice: "Question",
     ):
         """
         Inicializa una nueva instancia de la clase Answer.
@@ -32,7 +38,7 @@ class Answer(Base):
             text (str): Texto de la respuesta.
             is_correct (bool): Indica si la respuesta es correcta.
             is_selected (bool): Indica si la respuesta ha sido seleccionada por el usuario.
-            choice (Choice): Objeto Choice al que pertenece esta respuesta.
+            choice (Question): Objeto Question al que pertenece esta respuesta.
         """
         self.id = id
         self.text = text
@@ -54,7 +60,7 @@ class Answer(Base):
         logging.info(f"Respuesta con id: {self.id} deseleccionada.")
 
 
-class Choice(Base):
+class Question(Base):
     """
     Representa un conjunto de respuestas posibles a una pregunta de selección.
 
@@ -67,7 +73,7 @@ class Choice(Base):
         self.answers = answers
         self.parent = item
         super().__init__()
-        logging.debug(f"Choice creada para el item con id: {self.parent.taks_id}")
+        logging.debug(f"Question creada para el item con id: {self.parent.taks_id}")
 
     def send_answers(self, answers: list["Answer"]):
         """
@@ -79,7 +85,9 @@ class Choice(Base):
         Args:
             answers (list[Answer]): Lista de objetos Answer que se van a marcar como seleccionadas.
         """
-        logging.info(f"Enviando respuestas para Choice del item: {self.parent.taks_id}")
+        logging.info(
+            f"Enviando respuestas para Question del item: {self.parent.taks_id}"
+        )
 
         for answer in self.answers:
             answer.unselect()
@@ -99,7 +107,7 @@ class Choice(Base):
         una petición POST a la URL correspondiente del backend.
         """
         logging.info(
-            f"Enviando respuestas seleccionadas para Choice del item: {self.parent.taks_id}"
+            f"Enviando respuestas seleccionadas para Question del item: {self.parent.taks_id}"
         )
         answers = []
         alternatives = []
@@ -117,14 +125,14 @@ class Choice(Base):
         }
 
         section_index = self.parent.section.index.lstrip("0")
-        choice_type = "singlechoice" if self.is_single_choice else "multiplechoice"
+        choice_type = "singlechoice" if self.is_single_question else "multiplechoice"
         course_url = self.parent.section.course.url_base
         url = f"{course_url}/section/{section_index}/{choice_type}/answer"
 
         logging.debug(f"URL para enviar las respuestas: {url}, data: {json_data}")
         self._make_request(url, method="POST", json=json_data)
         logging.info(
-            f"Respuestas enviadas correctamente para Choice del item: {self.parent.taks_id}"
+            f"Respuestas enviadas correctamente para Question del item: {self.parent.taks_id}"
         )
 
     def get_selected_answers(self) -> list["Answer"]:
@@ -136,12 +144,12 @@ class Choice(Base):
         """
         selected_answers = [answer for answer in self.answers if answer.is_selected]
         logging.debug(
-            f"Respuestas seleccionadas obtenidas: {[answer.id for answer in selected_answers]} para Choice del item: {self.parent.taks_id}"
+            f"Respuestas seleccionadas obtenidas: {[answer.id for answer in selected_answers]} para Question del item: {self.parent.taks_id}"
         )
         return selected_answers
 
     @property
-    def is_single_choice(self) -> bool:
+    def is_single_question(self) -> bool:
         """
         Verifica si el tipo de pregunta es de opción única.
 
@@ -150,12 +158,12 @@ class Choice(Base):
         """
         is_single = self.parent.type == utils.ArticleType.SINGLE_CHOICE
         logging.debug(
-            f"Choice del item: {self.parent.taks_id} es de tipo singlechoice: {is_single}"
+            f"Question del item: {self.parent.taks_id} es de tipo singlechoice: {is_single}"
         )
         return is_single
 
     @property
-    def is_multiple_choice(self) -> bool:
+    def is_multiple_question(self) -> bool:
         """
         Verifica si el tipo de pregunta es de opción múltiple.
 
@@ -164,6 +172,6 @@ class Choice(Base):
         """
         is_multiple = self.parent.type == utils.ArticleType.MULTIPLE_CHOICE
         logging.debug(
-            f"Choice del item: {self.parent.taks_id} es de tipo multiplechoice: {is_multiple}"
+            f"Question del item: {self.parent.taks_id} es de tipo multiplechoice: {is_multiple}"
         )
         return is_multiple

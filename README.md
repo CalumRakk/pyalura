@@ -51,16 +51,15 @@ pip install git+https://github.com/CalumRakk/pyalura
 
 ```python
 from pyalura import Course
-from pyalura.utils import sleep_progress, download_item
+from pyalura.utils import download_item
 
-url = "https://app.aluracursos.com/course/..."
+url = "https://app.aluracursos.com/course/spring-boot-3-aplique-practicas-proteja-api-rest"
 curso = Course(url)
-carpeta = "Descargas"
-for seccion in curso.sections:
-    for item in seccion.items:
-        download_item(item, carpeta)
-        sleep_progress(25)  # Pausa para evitar sobrecargar la API
-    sleep_progress(5)
+folder = "Descargas"
+for section in curso.sections:
+    for item in section.items:
+        download_item(item, folder)
+
 ```
 
 #### **Como responder y enviar una actividad especifica de un curso**
@@ -71,9 +70,9 @@ from pyalura import Course
 url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/task/86025"
 item = Course.get_item(url) # Instancia una actividad especificada en la url
 content = item.get_content() # Obtiene el contenido de la pregunta
-choice = content["choice"] # Obtiene la pregunta
+question = content["question"] # Obtiene la pregunta
 
 print(content["content"])
-answer= choice.answers[1].select() # Marca la respuesta 1 como correcta.
-choice.send_answers(answer) # Envia la respuesta seleccionada al backend
+answer= question.answers[1].select() # Marca la respuesta 1 como correcta.
+question.send_answers(answer) # Envia la respuesta seleccionada al backend
 ```

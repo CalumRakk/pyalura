@@ -9,8 +9,8 @@ import html2text
 from lxml import html
 
 from pyalura import utils
-from pyalura.choice import Answer, Choice
 from pyalura.item_utils import get_answers
+from pyalura.question import Answer, Question
 from pyalura.utils import ArticleType
 
 from .base import Base
@@ -72,7 +72,7 @@ class Item(Base):
                 *   `videos`: Un diccionario con la información de los videos del item (si es un video).
                 *   `content`: El contenido del item en formato markdown.
                 *   `raw_html`: El HTML original del item.
-                *   `choice`: Un objeto Choice con las opciones de respuesta (si es una tarea).
+                *   `choice`: Un objeto Question con las opciones de respuesta (si es una tarea).
         """
         logger.info(f"Solicitando el contenido del item")
         if self._should_wait_for_request():
@@ -86,14 +86,14 @@ class Item(Base):
         item_content = self._get_content(root)
         item_raw_html = response.text
         videos = None
-        choice = None
+        question = None
 
         if self.is_video:
             videos = self._fetch_item_video()
         if self.is_choice:
-            choice = Choice(answers=None, item=self)
-            answers = [Answer(choice=choice, **i) for i in get_answers(root)]
-            choice.answers = answers
+            question = Question(answers=None, item=self)
+            answers = [Answer(choice=question, **i) for i in get_answers(root)]
+            question.answers = answers
             logger.debug(
                 f"Obtenida la información de las respuestas para el item: {self.title}"
             )
@@ -103,7 +103,7 @@ class Item(Base):
             "videos": videos,
             "content": item_content,
             "raw_html": item_raw_html,
-            "choice": choice,
+            "question": question,
         }
 
     def _should_wait_for_request(self) -> bool:
@@ -283,7 +283,7 @@ class Item(Base):
         if self.is_choice:
             logger.info(f"Resolviendo la pregunta: {self.title} ({self.url})")
             content = self.get_content()
-            choice: Choice = content["choice"]
+            choice: Question = content["choice"]
             _ = [answer.select() for answer in choice.answers if answer.is_correct]
             choice.send_selected_answers()
             self.is_marked_as_seen = True

@@ -107,10 +107,10 @@ class ArticleType(enum.Enum):
     - VIDEO: El artículo es un video.
     - COMPLEMENTARY_INFORMATION: (documento de texto) El articulo es una informacion complementaria.
     - SETUP_EXPLANATION: (documento de texto) El articulo es una explicacion de configuracion.
-    - SINGLE_CHOICE: (Texto con un Choice) El articulo es una pregunta de respuesta unica.
+    - SINGLE_CHOICE: (Texto con un Question) El articulo es una pregunta de respuesta unica.
     - DO_AFTER_ME
     - WHAT_WE_LEARNED:
-    - MULTIPLE_CHOICE: (Texto con un Choice) El articulo es una pregunta de respuesta multiple.
+    - MULTIPLE_CHOICE: (Texto con un Question) El articulo es una pregunta de respuesta multiple.
     - HQ_EXPLANATION: (documento de texto) El articulo es una explicacion de la pregunta.
     - CHALLENGE
     - LINK_SUBMIT: (Texto con un form para enviar un link) El articulo es un envio de link.
@@ -247,7 +247,7 @@ def get_items(root: "HtmlElement") -> list[dict]:
     return articulos
 
 
-def _build_output_path(item: Item, folder_output: Union[str, Path]) -> Path:
+def _build_output_path(item: "Item", folder_output: Union[str, Path]) -> Path:
     folder_output = (
         Path(folder_output) if isinstance(folder_output, str) else folder_output
     )
