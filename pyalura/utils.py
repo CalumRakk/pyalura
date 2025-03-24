@@ -6,6 +6,7 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 from urllib.parse import urljoin, urlparse
+from datetime import timedelta
 
 import unidecode
 
@@ -33,6 +34,19 @@ def sleep_progress(seconds):
         time.sleep(1)
         logger.debug(f"Esperando {i} segundos antes de continuar...")
     logger.debug("Continuando...")
+
+
+def sleep_progress(seconds):
+    minutes = int(timedelta(seconds=seconds).total_seconds() // 60)
+
+    logger.info(f"Esperando {minutes} minutos antes de continuar...")
+    count = 0
+    for i in range(int(seconds), 0, -1):
+        time.sleep(1)
+        count += 1
+        if count % 60 == 0:
+            minutes -= 1
+            logger.info(f"Esperando {minutes} minutos antes de continuar...")
 
 
 logging.basicConfig(

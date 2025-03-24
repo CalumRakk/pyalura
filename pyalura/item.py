@@ -265,7 +265,6 @@ class Item(Base):
                 f'Se intento marcar como visto un Item choice, use "resolve_choice" en vez de "mark_as_watched" para el item: {self.url}'
             )
             return False
-            l
         else:
             logger.info(f"Marcando el Item como visto: {self.title} ({self.url})")
             self._make_request(self.url)
