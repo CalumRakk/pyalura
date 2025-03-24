@@ -3,10 +3,10 @@ import json
 import logging
 import random
 import time
+from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 from urllib.parse import urljoin, urlparse
-from datetime import timedelta
 
 import unidecode
 
@@ -26,14 +26,6 @@ def string_to_slug(string):
     slug_lower = slug.lower().replace(" ", "-")
     slut_lower_sin_caracteres_invalidos = caracteres_invalidos.sub("_", slug_lower)
     return slut_lower_sin_caracteres_invalidos.rstrip(" .")
-
-
-def sleep_progress(seconds):
-    logger.info(f"Esperando {seconds} segundos antes de continuar...")
-    for i in range(int(seconds), 0, -1):
-        time.sleep(1)
-        logger.debug(f"Esperando {i} segundos antes de continuar...")
-    logger.debug("Continuando...")
 
 
 def sleep_progress(seconds):

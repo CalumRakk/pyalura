@@ -11,8 +11,12 @@ pip install git+https://github.com/CalumRakk/pyalura
 ## Inicio rápido
 
 1. **Obtén tus cookies de Alura:** Usa una extensión de navegador como [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) para exportar tus cookies a un archivo `cookies.txt`.
+
 2. **Guarda el archivo `cookies.txt`:** Asegúrate de que el archivo `cookies.txt` esté en el mismo directorio donde ejecutarás tu script de Python.
-3. **Crea una instancia de la clase `Course`:**
+
+3. **Crea un script en Python**
+
+    Crea un archivo Python, por ejemplo `myscript.py`, y agrega el siguiente código para usar la clase Course e interactuar con el curso:
 
    ```python
    from pyalura import Course
@@ -30,10 +34,10 @@ pip install git+https://github.com/CalumRakk/pyalura
            content = item.get_content()
            # Procesa el contenido del item (videos, texto, etc.)
    ```
+   
+5. **Código Completo**
 
-5. **Código completo**
-
-   El siguiente código recorre todas las actidades del curso especificado e imprime por consola el titulo de la seccion e item (actividad)
+   A continuación, te mostramos el código completo para recorrer todas las actividades del curso e imprimir el título de cada sección y actividad en la consola.
 
    ```python
    from pyalura import Course
@@ -44,6 +48,8 @@ pip install git+https://github.com/CalumRakk/pyalura
        for item in section.items:
            print(f"Sección: {section.title}, Item: {item.title}")
    ```
+
+
 
 ## Ejemplos
 
@@ -64,7 +70,7 @@ for section in course.sections:
 
 ```
 
-#### **Como responder y enviar una actividad especifica de un curso**
+### **Como responder y enviar una actividad especifica de un curso**
 
 El siguiente código instancia un item (actividad) especifica que contiene una pregunta y la resuelve automaticamente con solo llamar al método.
 
@@ -75,3 +81,4 @@ url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos
 item = Course.get_item(url)
 item.resolve_question()
 ```
+
