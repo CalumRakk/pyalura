@@ -3,9 +3,9 @@ from datetime import timedelta
 from pyalura import Course
 from pyalura.utils import sleep_progress
 
-url = "https://app.aluracursos.com/course/oracle-cloud-infrastructure-base-datos-infraestructura-codigo"
+url = "https://app.aluracursos.com/course/consultas-sql-mysql"
 curso = Course(url)
-VIDEO_ESPERA = timedelta(minutes=10).total_seconds()
+VIDEO_ESPERA = timedelta(minutes=5).total_seconds()
 
 for section in curso.sections:
     for item in section.items:
@@ -14,7 +14,7 @@ for section in curso.sections:
         elif item.is_video:
             item.mark_as_watched()
             sleep_progress(seconds=VIDEO_ESPERA)
-        elif item.is_choice:
+        elif item.is_question:
             item.resolve_choice()
             sleep_progress(seconds=60)
         else:

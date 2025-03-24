@@ -17,46 +17,48 @@ pip install git+https://github.com/CalumRakk/pyalura
    ```python
    from pyalura import Course
 
-   url_del_curso = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
-   curso = Course(url_del_curso)
+   course_url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
+   course = Course(course_url)
    ```
 
 4. **Accede a las secciones e items del curso:**
+
    ```python
-   for seccion in curso.sections:
-       for item in seccion.items:
-           print(f"Sección: {seccion.title}, Item: {item.title}")
-           contenido = item.get_content()
+   for section in course.sections:
+       for item in section.items:
+           print(f"Sección: {section.title}, Item: {item.title}")
+           content = item.get_content()
            # Procesa el contenido del item (videos, texto, etc.)
    ```
 
 5. **Código completo**
 
-    ```python
-    from pyalura import Course
+   El siguiente código recorre todas las actidades del curso especificado e imprime por consola el titulo de la seccion e item (actividad)
 
-    url_del_curso = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
-    curso = Course(url_del_curso)
-    for seccion in curso.sections:
-       for item in seccion.items:
-           print(f"Sección: {seccion.title}, Item: {item.title}")
-           contenido = item.get_content()
-    ```
+   ```python
+   from pyalura import Course
 
+   course_url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/"
+   course = Course(course_url)
+   for section in course.sections:
+       for item in section.items:
+           print(f"Sección: {section.title}, Item: {item.title}")
+   ```
 
 ## Ejemplos
 
 ### Descarga un curso completo:
 
+El siguiente código recorre todas las activades del curso especificado y descarga todo el contenido.
 
 ```python
 from pyalura import Course
 from pyalura.utils import download_item
 
 url = "https://app.aluracursos.com/course/spring-boot-3-aplique-practicas-proteja-api-rest"
-curso = Course(url)
+course = Course(url)
 folder = "Descargas"
-for section in curso.sections:
+for section in course.sections:
     for item in section.items:
         download_item(item, folder)
 
@@ -64,15 +66,12 @@ for section in curso.sections:
 
 #### **Como responder y enviar una actividad especifica de un curso**
 
+El siguiente código instancia un item (actividad) especifica que contiene una pregunta y la resuelve automaticamente con solo llamar al método.
+
 ```python
 from pyalura import Course
 
 url = "https://app.aluracursos.com/course/java-trabajar-listas-colecciones-datos/task/86025"
-item = Course.get_item(url) # Instancia una actividad especificada en la url
-content = item.get_content() # Obtiene el contenido de la pregunta
-question = content["question"] # Obtiene la pregunta
-
-print(content["content"])
-answer= question.answers[1].select() # Marca la respuesta 1 como correcta.
-question.send_answers(answer) # Envia la respuesta seleccionada al backend
+item = Course.get_item(url)
+item.resolve_question()
 ```

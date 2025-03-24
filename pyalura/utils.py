@@ -130,7 +130,7 @@ class ArticleType(enum.Enum):
     TEXT_CONTENT = 12
 
     @property
-    def is_choice(self):
+    def is_question(self):
         return self in [
             ArticleType.SINGLE_CHOICE,
             ArticleType.MULTIPLE_CHOICE,

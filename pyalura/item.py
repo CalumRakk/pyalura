@@ -90,7 +90,7 @@ class Item(Base):
 
         if self.is_video:
             videos = self._fetch_item_video()
-        if self.is_choice:
+        if self.is_question:
             question = Question(answers=None, item=self)
             answers = [Answer(choice=question, **i) for i in get_answers(root)]
             question.answers = answers
@@ -260,7 +260,7 @@ class Item(Base):
                 self.is_marked_as_seen = True
                 logger.info(f"Video: {self.title} marcado como visto con exito")
                 return True
-        elif self.is_choice:
+        elif self.is_question:
             logger.info(
                 f'Se intento marcar como visto un Item choice, use "resolve_choice" en vez de "mark_as_watched" para el item: {self.url}'
             )
@@ -273,19 +273,18 @@ class Item(Base):
             return True
         return False
 
-    def resolve_choice(self):
+    def resolve_question(self):
         if self.is_marked_as_seen is True:
             logger.info(
                 f"El item: {self.title} ya fue resuelto, no se puede resolver de nuevo"
             )
             return False
 
-        if self.is_choice:
+        if self.is_question:
             logger.info(f"Resolviendo la pregunta: {self.title} ({self.url})")
             content = self.get_content()
-            choice: Question = content["choice"]
-            _ = [answer.select() for answer in choice.answers if answer.is_correct]
-            choice.send_selected_answers()
+            question: Question = content["question"]
+            question.resolve()
             self.is_marked_as_seen = True
             return True
         logger.info(f"El item: {self.title} no es una pregunta")
@@ -316,16 +315,16 @@ class Item(Base):
         return is_video
 
     @property
-    def is_choice(self) -> bool:
+    def is_question(self) -> bool:
         """
         Verifica si el elemento es de tipo choice (pregunta de opción múltiple).
 
         Returns:
             bool: True si el elemento es una pregunta de opción múltiple, False en caso contrario.
         """
-        is_choice = self.type.is_choice
-        logger.debug(f"Validando si el item: {self.title} es choice: {is_choice}")
-        return is_choice
+        is_question = self.type.is_question
+        logger.debug(f"Validando si el item: {self.title} es choice: {is_question}")
+        return is_question
 
     @property
     def is_document(self) -> bool:

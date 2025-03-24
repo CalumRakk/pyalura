@@ -148,6 +148,12 @@ class Question(Base):
         )
         return selected_answers
 
+    def resolve(self) -> bool:
+        for answer in self.answers:
+            if answer.is_correct:
+                answer.select()
+        return self.send_selected_answers()
+
     @property
     def is_single_question(self) -> bool:
         """

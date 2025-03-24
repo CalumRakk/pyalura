@@ -73,7 +73,7 @@ class Course(Base):
             ".//a[@class='course-header-banner-breadcrumb__subcategory']"
         ).text.strip()
         return string_to_slug(subcategory)
-
+    
     @property
     def sections(self) -> list["Section"]:
         """
