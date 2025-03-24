@@ -15,7 +15,7 @@ for section in curso.sections:
             item.mark_as_watched()
             sleep_progress(seconds=VIDEO_ESPERA)
         elif item.is_question:
-            item.resolve_choice()
+            item.resolve_question()
             sleep_progress(seconds=60)
         else:
             item.mark_as_watched()
