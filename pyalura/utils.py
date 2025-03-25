@@ -7,7 +7,7 @@ from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 from urllib.parse import urljoin, urlparse
-
+import platform
 import unidecode
 
 if TYPE_CHECKING:
@@ -19,6 +19,16 @@ from lxml.html import HtmlElement
 
 caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1f]')
 TRACK_DOWNLOADS_PATH = Path("track_downloads.json")
+
+
+def get_downloads_folder() -> Path:
+    system = platform.system()
+    if system == "Windows":
+        return Path.home() / "Downloads"
+    elif system in ["Linux", "Darwin"]:
+        return Path.home() / "Downloads"
+    else:
+        raise OSError("Sistema operativo no soportado")
 
 
 def string_to_slug(string):

@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 import requests
 from lxml import html
+from pyalura.utils import get_downloads_folder
 
 headers = {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
@@ -21,13 +22,36 @@ headers = {
 
 class CookieManager:
 
-    def __init__(self):
-        self.path = Path("cookies.txt")
+    def __init__(self, cookies_path=None):
+        self.path = (
+            Path(cookies_path) if isinstance(cookies_path, str) else Path("cookies.txt")
+        )
         self.headers = headers
+
+    def _simple_cookies_file_finder(self):
+        possible_names = [
+            "cookies.txt",
+            "app.aluracursos.com_cookies.txt",
+            "cookies.json",
+            "cookies.netscape",
+            "app.aluracursos.com_cookies.json",
+        ]
+        possible_locations = [get_downloads_folder(), Path.cwd()]
+
+        for location in possible_locations:
+            for name in possible_names:
+                path = location / name
+                if path.exists():
+                    return path
 
     def load(self):
         if self.path.exists():
             return self.path.read_text()
+
+        self.path = self._simple_cookies_file_finder()
+        if self.path:
+            return self.path.read_text()
+
         raise FileNotFoundError(f"Cookie file not found: {self.path}")
 
     def parse_cookies(self, content, format_type="netscape"):

@@ -9,12 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 class Base:
-    def __init__(self) -> None:
-        self.cookie_manager = CookieManager()
+    def __init__(self, cookies_path=None) -> None:
+        self.cookie_manager = CookieManager(cookies_path=cookies_path)
 
     @property
     def cookies(self):
-        return self.cookie_manager.get_cookies()
+        # TODO: mejorar la logica de la carga de cookies, no deberia guarde en la instancia de esta Clase.
+        if not hasattr(self, "_cookies"):
+            cookies = self.cookie_manager.get_cookies()
+            setattr(self, "_cookies", cookies)
+        return getattr(self, "_cookies")
 
     @property
     def headers(self):
