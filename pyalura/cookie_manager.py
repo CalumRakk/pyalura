@@ -36,7 +36,7 @@ class CookieManager:
             "cookies.netscape",
             "app.aluracursos.com_cookies.json",
         ]
-        possible_locations = [get_downloads_folder(), Path.cwd()]
+        possible_locations = [Path.cwd(), get_downloads_folder()]
 
         for location in possible_locations:
             for name in possible_names:
