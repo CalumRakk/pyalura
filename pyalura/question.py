@@ -162,7 +162,10 @@ class Question(Base):
         Returns:
             bool: True si el tipo es de opción única, False de lo contrario.
         """
-        is_single = self.parent.type == utils.ArticleType.SINGLE_CHOICE
+        is_single = (
+            self.parent.type == utils.ArticleType.SINGLE_CHOICE
+            or self.parent.type == utils.ArticleType.PRACTICE_CLASS_CONTENT
+        )
         logging.debug(
             f"Question del item: {self.parent.taks_id} es de tipo singlechoice: {is_single}"
         )
