@@ -42,6 +42,11 @@ class Course(Base):
         logger.debug("Obteniendo la URL del boton principal para ver el curso")
         root_base = self._get_course_page(self.url)["root"]
 
+        evaluationForm = root_base.find(".//form[@id='evaluationForm']")
+        if evaluationForm is not None:
+            logger.info(f"El curso '{self.title}' necesita una evaluacion manual.")
+            raise Exception(f"El curso '{self.title}' necesita una evaluacion manual.")
+
         url_relative = root_base.find(
             ".//section[@class='course']//div[@class='container']/a"
         ).get("href")
