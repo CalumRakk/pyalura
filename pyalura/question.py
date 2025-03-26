@@ -149,10 +149,15 @@ class Question(Base):
         return selected_answers
 
     def resolve(self) -> bool:
-        for answer in self.answers:
-            if answer.is_correct:
-                answer.select()
-        return self.send_selected_answers()
+        if self.answers:
+            for answer in self.answers:
+                if answer.is_correct:
+                    answer.select()
+            return self.send_selected_answers()
+        logger.info(
+            f"La pregunta {self.parent.taks_id} no tiene respuestas. No se puede resolver."
+        )
+        return False
 
     @property
     def is_single_question(self) -> bool:
