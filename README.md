@@ -1,6 +1,6 @@
 # PyAlura
 
-Una API no oficial de Python para interactuar con la plataforma Alura.
+Una API no oficial de Python para interactuar con la plataforma [Alura](https://app.aluracursos.com).
 
 ## Instalación
 
