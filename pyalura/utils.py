@@ -1,10 +1,9 @@
 import enum
 import logging
 import platform
-import random
 import time
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin, urlparse
 
 import unidecode
@@ -53,7 +52,6 @@ def sleep_progress(seconds: float):
             logger.info(f"Faltan {mins_left} minutos...")
         elif i <= 10:  # Mostrar segundos finales
             logger.info(f"{i} segundos restantes...")
-
 
 
 logging.basicConfig(
@@ -266,50 +264,3 @@ def get_items(root: "HtmlElement") -> list[dict]:
         )
 
     return articulos
-
-
-def _build_output_path(item: "Item", folder_output: Union[str, Path]) -> Path:
-    folder_output = (
-        Path(folder_output) if isinstance(folder_output, str) else folder_output
-    )
-    # Construcción de rutas
-    course_path = folder_output / item.course.subcategory / item.course.title_slug
-    section_path = course_path / f"{item.section.index}-{item.section.title_slug}"
-    item_path = section_path / f"{item.index}-{item.title_slug}"
-
-    # Crear directorios antes de definir la salida
-    item_path.parent.mkdir(parents=True, exist_ok=True)
-    return item_path
-
-
-def _download_item(item, output: Path) -> bool:
-    if output.exists():
-        logger.info("El item ya ha sido descargado.")
-        return False
-
-    # Descarga del contenido
-    content = item.get_content()
-    if item.is_video:
-        output = output.with_suffix(".mp4")
-        download_url = content["videos"]["hd"]["mp4"]
-
-        response = item._make_request(download_url)
-
-        if response.status_code != 200:
-            logger.error(f"Error al descargar {item.title}: {response.status_code}")
-            return
-
-        output.write_bytes(response.content)
-    else:
-        output = output.with_suffix(".md")
-        output.write_text(content["content"], encoding="utf-8")
-    return True
-
-
-def download_item(item: "Item", folder_output: Union[str, Path]):
-    logger.info(f"Procesando Item: {item.index} - {item.title}")
-    folder_output= Path(folder_output) if isinstance(folder_output, str) else folder_output
-    output = _build_output_path(item, folder_output)
-    is_downloaded = _download_item(item, output)
-    if is_downloaded:
-        sleep_progress(random.randint(5, 15))
