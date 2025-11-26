@@ -1,13 +1,12 @@
 import enum
-import json
 import logging
+import platform
 import random
 import time
-from datetime import timedelta
 from pathlib import Path
 from typing import TYPE_CHECKING, Union
 from urllib.parse import urljoin, urlparse
-import platform
+
 import unidecode
 
 if TYPE_CHECKING:
@@ -38,17 +37,23 @@ def string_to_slug(string):
     return slut_lower_sin_caracteres_invalidos.rstrip(" .")
 
 
-def sleep_progress(seconds):
-    minutes = int(timedelta(seconds=seconds).total_seconds() // 60)
+def sleep_progress(seconds: float):
+    total = int(seconds)
+    if total <= 0:
+        return
 
-    logger.info(f"Esperando {minutes} minutos antes de continuar...")
-    count = 0
-    for i in range(int(seconds), 0, -1):
+    logger.info(
+        f"Esperando {total // 60} minutos y {total % 60} segundos antes de continuar..."
+    )
+
+    for i in range(total, 0, -1):
         time.sleep(1)
-        count += 1
-        if count % 60 == 0:
-            minutes -= 1
-            logger.info(f"Esperando {minutes} minutos antes de continuar...")
+        if i % 60 == 0:
+            mins_left = i // 60
+            logger.info(f"Faltan {mins_left} minutos...")
+        elif i <= 10:  # Mostrar segundos finales
+            logger.info(f"{i} segundos restantes...")
+
 
 
 logging.basicConfig(
@@ -301,8 +306,9 @@ def _download_item(item, output: Path) -> bool:
     return True
 
 
-def download_item(item: "Item", folder_output: Path):
+def download_item(item: "Item", folder_output: Union[str, Path]):
     logger.info(f"Procesando Item: {item.index} - {item.title}")
+    folder_output= Path(folder_output) if isinstance(folder_output, str) else folder_output
     output = _build_output_path(item, folder_output)
     is_downloaded = _download_item(item, output)
     if is_downloaded:

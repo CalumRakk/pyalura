@@ -75,7 +75,7 @@ class Course(Base):
     def subcategory(self) -> str:
         root = self._get_course_page(self.url)["root"]
         subcategory = root.find(
-            ".//a[@class='course-header-banner-breadcrumb__subcategory']"
+            ".//a[@class='course-header-banner-breadcrumb__category-link']"
         ).text.strip()
         return string_to_slug(subcategory)
 
