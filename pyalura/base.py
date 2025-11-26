@@ -28,6 +28,10 @@ class Base:
     def headers(self):
         return self.cookie_manager.headers
 
+    @property
+    def cookies(self):
+        return self.cookie_manager.get_cookies()
+
     def _make_request(self, url, method="GET", **kwargs):
         logger.debug(f"Request: {url}, method: {method}, kwargs: {kwargs}")
 

@@ -1,7 +1,9 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 import requests
 from lxml import html
+
 from pyalura.utils import get_downloads_folder
 
 headers = {
@@ -27,6 +29,7 @@ class CookieManager:
             Path(cookies_path) if isinstance(cookies_path, str) else Path("cookies.txt")
         )
         self.headers = headers
+        self._cached_cookies = None
 
     def _simple_cookies_file_finder(self):
         possible_names = [
@@ -95,13 +98,21 @@ class CookieManager:
             return {}
 
     def get_cookies(self):
+        if self._cached_cookies:
+            return self._cached_cookies
+
         content = self.load()
+        parsed_cookies = {}
+
         if content.startswith("{"):
-            return self.parse_cookies(content, format_type="json")
+            parsed_cookies = self.parse_cookies(content, format_type="json")
         elif content.startswith("["):
-            return self.parse_cookies(content, format_type="json")
+            parsed_cookies = self.parse_cookies(content, format_type="json")
         else:
-            return self.parse_cookies(content, format_type="netscape")
+            parsed_cookies = self.parse_cookies(content, format_type="netscape")
+
+        self._cached_cookies = parsed_cookies
+        return self._cached_cookies
 
     def is_dashboard_page(self, response):
         root = html.fromstring(response.text)
