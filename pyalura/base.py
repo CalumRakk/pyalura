@@ -17,14 +17,6 @@ class Base:
             self.cookie_manager = CookieManager(cookies_path=cookies_path)
 
     @property
-    def cookies(self):
-        # TODO: mejorar la logica de la carga de cookies, no deberia guarde en la instancia de esta Clase.
-        if not hasattr(self, "_cookies"):
-            cookies = self.cookie_manager.get_cookies()
-            setattr(self, "_cookies", cookies)
-        return getattr(self, "_cookies")
-
-    @property
     def headers(self):
         return self.cookie_manager.headers
 

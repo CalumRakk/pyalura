@@ -7,6 +7,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 
 import html2text
 from lxml import html
+from lxml.html import HtmlElement
 
 from pyalura import utils
 from pyalura.item_utils import get_answers
@@ -387,3 +388,65 @@ class Item(Base):
             output_path.write_text(content["content"], encoding="utf-8")
 
         sleep_progress(random.randint(5, 15))
+
+    @staticmethod
+    def parse_items_from_html(root: "HtmlElement") -> list[dict]:
+        """
+        Devuelve una lista de diccionarios con información estructurada sobre cada item.
+
+        Returns:
+            list[dict]: Una lista de diccionarios, donde cada diccionario representa un item con los siguientes campos:
+                - `url` (str): La URL completa del artículo.
+                - `title` (str): El título del artículo.
+                - `index` (str): El índice o número del artículo.
+                - `type` (ArticleType): El tipo de artículo, como VIDEO, COMPLEMENTARY_INFORMATION, etc.
+
+        Ejemplo de retorno:
+            [
+                {
+                    "url": "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/86876",
+                    "title": "Presentación",
+                    "index": "01",
+                    "type": <ArticleType.VIDEO: 1>
+                },
+                {
+                    'url': 'https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/86877',
+                    'title': 'Un nuevo proyecto utilizando Spring Framework',
+                    'index': '02',
+                    'type': <ArticleType.VIDEO: 1>
+                },
+                ...
+            ]
+
+        Notas:
+            - La función busca artículos dentro de un elemento `<ul>` con la clase `task-menu-nav-list`.
+            - La URL de cada artículo se construye utilizando la base `https://app.aluracursos.com/` y el valor del atributo `href` del enlace (`<a>`).
+            - El tipo de artículo (`type`) se determina a partir del valor de `xlink:href` del elemento `<use>`.
+        """
+
+        articulos = []
+        for articulo in root.xpath(".//ul[@class='task-menu-nav-list']/li"):
+            url = urljoin(
+                "https://app.aluracursos.com/", articulo.find(".//a").get("href")
+            )
+            title = articulo.find(".//span[@title]").text.strip()
+            index = articulo.find(
+                ".//span[@class='task-menu-nav-item-number']"
+            ).text.strip()
+            type = getattr(
+                ArticleType, articulo.find(".//use").get("xlink:href").split("#")[1]
+            )
+            is_marked_as_seen = "task-menu-nav-item-svg--done" in articulo.find(
+                ".//svg"
+            ).get("class")
+            articulos.append(
+                {
+                    "url": url,
+                    "title": title,
+                    "index": index,
+                    "type": type,
+                    "is_marked_as_seen": is_marked_as_seen,
+                }
+            )
+
+        return articulos

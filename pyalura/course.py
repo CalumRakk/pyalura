@@ -121,7 +121,8 @@ class Course(Base):
             logger.info(f"Título de la página: {page_title}")
 
             course_sections = [
-                Section(**i, course=self) for i in utils.get_course_sections(root)
+                Section(**i, course=self)
+                for i in Section.parse_sections_from_html(root)
             ]
             logger.debug(
                 f"Secciones del curso: {len(course_sections)}, primer elemento: {course_sections[0].__dict__}"

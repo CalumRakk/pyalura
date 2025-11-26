@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 import re
 
-from lxml.html import HtmlElement
 
 caracteres_invalidos = re.compile('[<>:"/\\|?*\x00-\x1f]')
 TRACK_DOWNLOADS_PATH = Path("track_downloads.json")
@@ -169,98 +168,3 @@ class ArticleType(enum.Enum):
             ArticleType.DO_AFTER_ME,
             ArticleType.TEXT_CONTENT,
         ]
-
-
-def get_course_sections(root: "HtmlElement"):
-    """
-    Extrae el contenido del curso desde un elemento `<select>` del HTML y devuelve una lista de secciones con sus nombres y URLs.
-
-    Returns:
-        list[dict]: Una lista de diccionarios. Cada diccionario representa una sección del curso con los siguientes campos:
-            - `name` (str): El nombre de la sección.
-            - `url` (str): La URL asociada a la sección.
-
-    Ejemplo de retorno:
-        [
-            {
-                "name": "01. Un nuevo proyecto utilizando Spring Framework",
-                "url": "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/section/11742/tasks"
-            },
-            {
-                "name": "02. Modelando los datos de la aplicación",
-                "url": "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/section/11743/tasks"
-            }
-        ]
-    """
-    logger.debug("Obteniendo secciones del curso...")
-    select_element = root.find(".//select[@class='task-menu-sections-select']")
-    url_raw = select_element.get("onchange").split("=")[1].strip(";'")
-    content = []
-    for option_element in select_element.xpath(".//option"):
-        value = option_element.get("value")
-        name = option_element.text.strip()
-        url_relative = url_raw.replace("'+this.value+'", value)
-        url = urljoin(HOST, url_relative)
-        content.append({"name": name, "url": url})
-    logger.debug(f"Secciones obtenidas: {len(content)}, primer element: {content[0]}")
-    return content
-
-
-def get_items(root: "HtmlElement") -> list[dict]:
-    """
-    Devuelve una lista de diccionarios con información estructurada sobre cada item.
-
-    Returns:
-        list[dict]: Una lista de diccionarios, donde cada diccionario representa un item con los siguientes campos:
-            - `url` (str): La URL completa del artículo.
-            - `title` (str): El título del artículo.
-            - `index` (str): El índice o número del artículo.
-            - `type` (ArticleType): El tipo de artículo, como VIDEO, COMPLEMENTARY_INFORMATION, etc.
-
-    Ejemplo de retorno:
-        [
-            {
-                "url": "https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/86876",
-                "title": "Presentación",
-                "index": "01",
-                "type": <ArticleType.VIDEO: 1>
-            },
-            {
-                'url': 'https://app.aluracursos.com/course/java-trabajando-lambdas-streams-spring-framework/task/86877',
-                'title': 'Un nuevo proyecto utilizando Spring Framework',
-                'index': '02',
-                'type': <ArticleType.VIDEO: 1>
-            },
-            ...
-        ]
-
-    Notas:
-        - La función busca artículos dentro de un elemento `<ul>` con la clase `task-menu-nav-list`.
-        - La URL de cada artículo se construye utilizando la base `https://app.aluracursos.com/` y el valor del atributo `href` del enlace (`<a>`).
-        - El tipo de artículo (`type`) se determina a partir del valor de `xlink:href` del elemento `<use>`.
-    """
-
-    articulos = []
-    for articulo in root.xpath(".//ul[@class='task-menu-nav-list']/li"):
-        url = urljoin("https://app.aluracursos.com/", articulo.find(".//a").get("href"))
-        title = articulo.find(".//span[@title]").text.strip()
-        index = articulo.find(
-            ".//span[@class='task-menu-nav-item-number']"
-        ).text.strip()
-        type = getattr(
-            ArticleType, articulo.find(".//use").get("xlink:href").split("#")[1]
-        )
-        is_marked_as_seen = "task-menu-nav-item-svg--done" in articulo.find(
-            ".//svg"
-        ).get("class")
-        articulos.append(
-            {
-                "url": url,
-                "title": title,
-                "index": index,
-                "type": type,
-                "is_marked_as_seen": is_marked_as_seen,
-            }
-        )
-
-    return articulos
