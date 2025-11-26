@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime
-from typing import Iterator, Union
+from pathlib import Path
+from typing import Iterator, Optional, Union
 from urllib.parse import urljoin
 
 import requests
@@ -30,7 +31,7 @@ class Course(Base):
         title (str): El título del curso extraído de la URL.
     """
 
-    def __init__(self, url: str, cookies_path: str = None):
+    def __init__(self, url: str, cookies_path: Optional[Union[str, Path]] = None):
         self.url = url
         self.url_base = utils.extract_base_url(self.url)
         self.title = utils.extract_name_url(self.url)
@@ -42,10 +43,18 @@ class Course(Base):
         logger.debug("Obteniendo la URL del boton principal para ver el curso")
         root_base = self._get_course_page(self.url)["root"]
 
+        has_try_to_enroll = root_base.find(".//a[@id='tryToEnroll']")
+        has_data_workload = bool(
+            root_base.xpath(".//a[@id='tryToEnroll' and @data-workload]")
+        )
         evaluationForm = root_base.find(".//form[@id='evaluationForm']")
         if evaluationForm is not None:
             logger.info(f"El curso '{self.title}' necesita una evaluacion manual.")
             raise Exception(f"El curso '{self.title}' necesita una evaluacion manual.")
+
+        if has_try_to_enroll and not has_data_workload:
+            logger.info("El curso no es visible para el usuario.")
+            raise Exception("El curso no es visible para el usuario.")
 
         url_relative = root_base.find(
             ".//section[@class='course']//div[@class='container']/a"

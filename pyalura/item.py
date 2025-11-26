@@ -53,7 +53,9 @@ class Item(Base):
         self.type = type
         self.section = section
         self.is_marked_as_seen = is_marked_as_seen
-        super().__init__()
+
+        super().__init__(cookie_manager=section.cookie_manager)
+
         logger.debug(f"Item creado: {self.title} ({self.url})")
 
     @property

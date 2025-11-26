@@ -1,16 +1,20 @@
+import logging
+
 import requests
 from lxml import html
-import logging
+
 from pyalura.cookie_manager import CookieManager
 from pyalura.utils import string_to_slug
-
 
 logger = logging.getLogger(__name__)
 
 
 class Base:
-    def __init__(self, cookies_path=None) -> None:
-        self.cookie_manager = CookieManager(cookies_path=cookies_path)
+    def __init__(self, cookies_path=None, cookie_manager=None) -> None:
+        if cookie_manager:
+            self.cookie_manager = cookie_manager
+        else:
+            self.cookie_manager = CookieManager(cookies_path=cookies_path)
 
     @property
     def cookies(self):

@@ -15,7 +15,8 @@ class Section(Base):
         self.title = title.strip()
         self.url = url
         self.course = course
-        super().__init__()
+
+        super().__init__(cookie_manager=course.cookie_manager)
 
     @property
     def items(self) -> list[Item]:
