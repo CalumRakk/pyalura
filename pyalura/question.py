@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING
 
 from pyalura import utils
-from pyalura.base import Base
 
 if TYPE_CHECKING:
     from pyalura.item import Item
@@ -10,7 +9,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-class Answer(Base):
+class Answer:
     """
     Representa una respuesta individual a una pregunta de selección.
 
@@ -45,7 +44,6 @@ class Answer(Base):
         self.is_correct = is_correct
         self.is_selected = is_selected
         self.choice = choice
-        super().__init__()
         logging.debug(f"Answer creada con id: {self.id}, text: '{self.text}'")
 
     def select(self):
@@ -60,7 +58,7 @@ class Answer(Base):
         logging.info(f"Respuesta con id: {self.id} deseleccionada.")
 
 
-class Question(Base):
+class Question:
     """
     Representa un conjunto de respuestas posibles a una pregunta de selección.
 
@@ -72,7 +70,6 @@ class Question(Base):
     def __init__(self, answers: list["Answer"], item: "Item"):
         self.answers = answers
         self.parent = item
-        super().__init__()
         logging.debug(f"Question creada para el item con id: {self.parent.taks_id}")
 
     def send_answers(self, answers: list["Answer"]):
@@ -130,7 +127,7 @@ class Question(Base):
         url = f"{course_url}/section/{section_index}/{choice_type}/answer"
 
         logging.debug(f"URL para enviar las respuestas: {url}, data: {json_data}")
-        self._make_request(url, method="POST", json=json_data)
+        self.parent._make_request(url, method="POST", json=json_data)
         logging.info(
             f"Respuestas enviadas correctamente para Question del item: {self.parent.taks_id}"
         )
