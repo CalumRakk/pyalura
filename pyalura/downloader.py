@@ -31,7 +31,6 @@ class Downloader:
         """Descarga el contenido del item usando la lógica encapsulada."""
         output_path = self._get_output_path(item)
 
-        # Determinar extensión antes de verificar existencia
         final_path = output_path.with_suffix(".mp4" if item.is_video else ".md")
 
         if final_path.exists():
@@ -43,10 +42,13 @@ class Downloader:
 
         if item.is_video:
             download_url = content["videos"]["hd"]["mp4"]
-            # TODO: Como _make_request es protegido, idealmente Item expondría un método para obtener raw bytes
-            # O el downloader tendría su propia sesión. Por simplicidad, usamos el del item:
-            response = item._make_request(download_url)
-            final_path.write_bytes(response.content)
+
+            response = item.get_resource_stream(download_url)
+            with open(final_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
         else:
             final_path.write_text(content["content"], encoding="utf-8")
 

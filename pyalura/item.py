@@ -354,6 +354,14 @@ class Item(Base):
                 setattr(self, "_is_last_item", is_last_item)
         return getattr(self, "_is_last_item")
 
+    def get_resource_stream(self, url: str):
+        """
+        Realiza una petición para obtener un recurso binario (video, imagen)
+        en modo stream, permitiendo la descarga por fragmentos.
+        """
+        # Usamos stream=True para no cargar todo el archivo en memoria RAM
+        return self._make_request(url, stream=True)
+
     @staticmethod
     def parse_items_from_html(root: "HtmlElement") -> list[dict]:
         """
