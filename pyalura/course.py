@@ -116,7 +116,12 @@ class Course(Base):
 
             r = self._make_request(url_botton_access, method="HEAD")
             url_course = r.headers["location"]
-            root = self._fetch_root(url_course)
+            try:
+                root = self._fetch_root(url_course)
+            except Exception as e:
+                logger.error(f"No se pudo obtener el contenido del curso: {e}")
+                raise e
+
             page_title = root.find(".//title").text.strip()
             logger.info(f"Título de la página: {page_title}")
 

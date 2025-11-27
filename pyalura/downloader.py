@@ -76,12 +76,15 @@ class Downloader:
 
         logger.info(f"Iniciando descarga del curso: {url}")
         course = Course(url)
+        try:
+            for item in course.iter_items():
+                self.download_item(item)
 
-        for item in course.iter_items():
-            self.download_item(item)
+            self._save_history(url)
+            logger.info(f"Curso completado: {course.title}")
 
-        self._save_history(url)
-        logger.info(f"Curso completado: {course.title}")
+        except Exception as e:
+            logger.error(f"Error descargando el curso {course.title}: {e}")
 
     def download_list(self, urls: list[str]):
         """Descarga una lista de URLs."""
