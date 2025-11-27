@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import html2text
 from lxml import html
@@ -62,13 +62,13 @@ class Answer:
 
     @staticmethod
     def parse_from_html(root) -> list[dict]:
-        """
-        Extrae las respuestas del HTML y devuelve una lista de diccionarios
-        listos para instanciar objetos Answer o ser procesados.
-        """
         choices = []
-        for element in root.xpath(".//div[@class='container']/form/li"):
+        elements = root.xpath(".//div[@class='container']/form/li")
+
+        for element in elements:
             choice_id = element.get("data-alternative-id")
+
+            # 1. Intento: Atributo data-correct (aunque venga roto a veces)
             is_correct = element.get("data-correct", "").strip().lower() in (
                 "true",
                 "yes",
@@ -79,10 +79,37 @@ class Answer:
             if p_element is not None:
                 element_to_string = html.tostring(p_element)
                 choice_text = html2text.html2text(
-                    element_to_string.decode("UTF-8")
+                    element_to_string.decode("UTF-8")  # type: ignore
                 ).strip()
             else:
                 choice_text = ""
+
+            # 2. Lógica Fallback: Análisis semántico del feedback
+            if not is_correct:
+                opinion_span = element.xpath(
+                    ".//span[contains(@class, 'alternativeList-item-alternativeOpinion')]"
+                )
+                if opinion_span is not None:
+                    opinion_span = opinion_span[0]
+                    opinion_text = cast(
+                        str,
+                        html.tostring(
+                            opinion_span, method="text", encoding="unicode"
+                        ).lower(),
+                    )
+
+                    # LISTA DE PALABRAS CLAVE (Español, Portugués, Inglés)
+                    # Buscamos la raíz positiva pero EXCLUIMOS la negativa explícitamente.
+                    # Esto cubre: "correcta", "correta", "correct", "correcto", "correto"
+                    # Y evita falsos positivos en: "incorrecta", "incorreta", "incorrect"
+                    #
+                    positive_roots = ["correct", "corret"]
+                    negative_roots = ["incorrect", "incorret"]
+                    has_positive = any(i in opinion_text for i in positive_roots)
+                    has_negative = any(i in opinion_text for i in negative_roots)
+
+                    if has_positive and not has_negative:
+                        is_correct = True
 
             is_selected = "alternativeList-item--checked" in element.get("class", "")
 
