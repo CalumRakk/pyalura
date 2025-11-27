@@ -27,7 +27,7 @@ class Section(Base):
     def items(self) -> list[Item]:
         if hasattr(self, "_items") is False:
             root = self._fetch_root(self.url)
-            items = [Item(**i, section=self) for i in Item.parse_items_from_html(root)]
+            items = Item.parse_items_from_html(root, section=self)
             setattr(self, "_items", items)
         return getattr(self, "_items")
 
