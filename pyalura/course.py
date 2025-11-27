@@ -220,3 +220,21 @@ class Course(Base):
             index_last_section = len(self.sections) + 1
             setattr(self, "_is_last_section", index_last_section)
         return getattr(self, "_is_last_section")
+
+    def complete_all_activities(self):
+        """Recorre y completa todas las actividades pendientes."""
+        logger.info(f"Completando actividades para: {self.title}")
+
+        for item in self.iter_items():
+            if item.is_marked_as_seen:
+                continue
+
+            logger.info(f"Procesando: {item.title}")
+
+            if item.is_question:
+                item.resolve_question()
+                utils.sleep_progress(60)
+            else:
+                item.mark_as_watched()
+                wait_time = 300 if item.is_video else 60
+                utils.sleep_progress(wait_time)

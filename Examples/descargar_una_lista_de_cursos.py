@@ -1,15 +1,11 @@
-from pyalura import Course
-from pyalura.utils import download_item
+from pyalura.downloader import Downloader
 
-URLs = [
-    "https://app.aluracursos.com/course/oracle-cloud-infrastructure-base-datos-infraestructura-codigo",
-    "https://app.aluracursos.com/course/python-data-science-primeros-pasos",
-    "https://app.aluracursos.com/course/consultas-sql-mysql",
-]
-folder = "Descargas"
+URLTEXT = """
+https://app.aluracursos.com/course/comandos-dml-manipulacion-datos-mysql
+https://app.aluracursos.com/course/certificacion-oracle-cloud-infrastructure-gestion-datos-seguridad-gobernanza
+https://app.aluracursos.com/course/low-code-ia-oracle-apex
+"""
 
-for url in URLs:
-    course = Course(url)
-    for section in course.sections:
-        for item in section.items:
-            download_item(item, folder)
+urls = [i.strip() for i in URLTEXT.split("\n")]
+downloader = Downloader(base_folder="Descargas")
+downloader.download_list(urls)
