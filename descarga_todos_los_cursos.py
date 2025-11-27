@@ -3,13 +3,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from pyalura import Course
+from pyalura.downloader import Downloader
 from pyalura.utils import sleep_progress
 
-URLTEXT = """https://app.aluracursos.com/course/consultas-sql-mysql
+URLTEXT = """https://app.aluracursos.com/course/comandos-dml-manipulacion-datos-mysql
 """
 
 URLs = URLTEXT.split("\n")
 folder = "Descargas"
+downloader = Downloader(base_folder=folder)
 
 for url in set(URLs):
     cursos_descargados = []
@@ -26,7 +28,7 @@ for url in set(URLs):
             item.section.course.last_item_get_content_time = datetime.now() - timedelta(
                 days=1
             )
-            item.download(folder)
+            downloader.download_item(item)
         sleep_progress(3)
 
     cursos_descargados.append(url)

@@ -216,7 +216,8 @@ class Question:
             for answer in self.answers:
                 if answer.is_correct:
                     answer.select()
-            return self.send_selected_answers()
+            self.send_selected_answers()
+            return True
         logger.info(
             f"La pregunta {self.parent.taks_id} no tiene respuestas. No se puede resolver."
         )

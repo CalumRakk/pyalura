@@ -2,7 +2,7 @@ import logging
 import random
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, urljoin, urlparse
 
 import html2text
@@ -11,7 +11,7 @@ from lxml.html import HtmlElement
 
 from pyalura import utils
 from pyalura.question import Answer, Question
-from pyalura.utils import ArticleType, sleep_progress
+from pyalura.utils import ArticleType
 
 from .base import Base
 
@@ -353,42 +353,6 @@ class Item(Base):
                 is_last_item = self.index == self.section.index_last_section
                 setattr(self, "_is_last_item", is_last_item)
         return getattr(self, "_is_last_item")
-
-    def get_output_path(self, folder_output: Union[str, Path]) -> Path:
-        """Calcula la ruta de guardado para este item."""
-        folder = (
-            Path(folder_output) if isinstance(folder_output, str) else folder_output
-        )
-
-        course_path = folder / self.course.subcategory / self.course.title_slug
-        section_path = course_path / f"{self.section.index}-{self.section.title_slug}"
-        item_path = section_path / f"{self.index}-{self.title_slug}"
-
-        item_path.parent.mkdir(parents=True, exist_ok=True)
-        return item_path
-
-    def download(self, folder_output: Union[str, Path]):
-        """Descarga el contenido del item (video o markdown)."""
-        output_path = self.get_output_path(folder_output)
-
-        if output_path.exists():
-            logger.info(f"El item {self.title} ya existe en {output_path}")
-            return
-
-        logger.info(f"Descargando Item: {self.index} - {self.title}")
-        content = self.get_content()
-
-        if self.is_video:
-            output_path = output_path.with_suffix(".mp4")
-            download_url = content["videos"]["hd"]["mp4"]
-
-            response = self._make_request(download_url)
-            output_path.write_bytes(response.content)
-        else:
-            output_path = output_path.with_suffix(".md")
-            output_path.write_text(content["content"], encoding="utf-8")
-
-        sleep_progress(random.randint(5, 15))
 
     @staticmethod
     def parse_items_from_html(root: "HtmlElement") -> list[dict]:
