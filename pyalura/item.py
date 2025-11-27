@@ -10,7 +10,6 @@ from lxml import html
 from lxml.html import HtmlElement
 
 from pyalura import utils
-from pyalura.item_utils import get_answers
 from pyalura.question import Answer, Question
 from pyalura.utils import ArticleType, sleep_progress
 
@@ -97,7 +96,9 @@ class Item(Base):
             question = Question(
                 answers=None, item=self
             )  # TODO: revisar si answers debe ser opcional
-            answers = [Answer(choice=question, **i) for i in get_answers(root)]
+            answers = [
+                Answer(choice=question, **i) for i in Answer.parse_from_html(root)
+            ]
             question.answers = answers
             logger.debug(
                 f"Obtenida la información de las respuestas para el item: {self.title}"

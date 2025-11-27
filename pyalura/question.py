@@ -1,6 +1,9 @@
 import logging
 from typing import TYPE_CHECKING
 
+import html2text
+from lxml import html
+
 from pyalura import utils
 
 if TYPE_CHECKING:
@@ -56,6 +59,42 @@ class Answer:
         """Marca la respuesta como no seleccionada."""
         self.is_selected = False
         logging.info(f"Respuesta con id: {self.id} deseleccionada.")
+
+    @staticmethod
+    def parse_from_html(root) -> list[dict]:
+        """
+        Extrae las respuestas del HTML y devuelve una lista de diccionarios
+        listos para instanciar objetos Answer o ser procesados.
+        """
+        choices = []
+        for element in root.xpath(".//div[@class='container']/form/li"):
+            choice_id = element.get("data-alternative-id")
+            is_correct = element.get("data-correct", "").strip().lower() in (
+                "true",
+                "yes",
+                "1",
+            )
+
+            p_element = element.find(".//p")
+            if p_element is not None:
+                element_to_string = html.tostring(p_element)
+                choice_text = html2text.html2text(
+                    element_to_string.decode("UTF-8")
+                ).strip()
+            else:
+                choice_text = ""
+
+            is_selected = "alternativeList-item--checked" in element.get("class", "")
+
+            choices.append(
+                {
+                    "id": choice_id,
+                    "text": choice_text,
+                    "is_correct": is_correct,
+                    "is_selected": is_selected,
+                }
+            )
+        return choices
 
 
 class Question:
